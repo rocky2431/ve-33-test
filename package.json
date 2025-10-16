@@ -15,6 +15,7 @@
     "deploy:full": "hardhat run scripts/deploy-full.ts --network localhost",
     "deploy:bsc": "hardhat run scripts/deploy-full.ts --network bscTestnet",
     "verify:bsc": "hardhat verify --network bscTestnet",
+    "verify:deployment": "hardhat run scripts/verify-deployment.ts --network bscTestnet",
     "check": "hardhat run scripts/check-status.ts",
     "node": "hardhat node",
     "frontend:dev": "cd frontend && npm run dev",
