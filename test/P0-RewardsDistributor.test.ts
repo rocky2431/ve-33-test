@@ -40,7 +40,7 @@ describe("P0-034: RewardsDistributor", function () {
     [owner, alice, bob, charlie, minter] = await ethers.getSigners();
 
     // 1. 部署 Token
-    const TokenFactory = await ethers.getContractFactory("PaimonToken");
+    const TokenFactory = await ethers.getContractFactory("Token");
     token = await TokenFactory.deploy();
     await token.waitForDeployment();
     const tokenAddress = await token.getAddress();
@@ -161,11 +161,11 @@ describe("P0-034: RewardsDistributor", function () {
       lockEnd = ((latestTime + 365n * 24n * 60n * 60n) / WEEK) * WEEK;
 
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
       tokenId1 = 1n;
 
       await token.connect(bob).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(bob).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(bob).create_lock(LOCK_AMOUNT, lockEnd);
       tokenId2 = 2n;
 
       // Minter 分配奖励
@@ -243,7 +243,7 @@ describe("P0-034: RewardsDistributor", function () {
       // Charlie 创建一个更长时间的锁仓 (2年)
       const longLockEnd = ((BigInt(await time.latest()) + 2n * 365n * 24n * 60n * 60n) / WEEK) * WEEK;
       await token.connect(charlie).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(charlie).createLock(LOCK_AMOUNT, longLockEnd);
+      await votingEscrow.connect(charlie).create_lock(LOCK_AMOUNT, longLockEnd);
       const tokenId3 = 3n;
 
       // 等待下一个 epoch
@@ -287,7 +287,7 @@ describe("P0-034: RewardsDistributor", function () {
       tokenIds = [];
       for (let i = 0; i < 3; i++) {
         await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-        await votingEscrow.connect(alice).createLock(LOCK_AMOUNT, lockEnd);
+        await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
         tokenIds.push(BigInt(i + 1));
       }
 
@@ -378,13 +378,13 @@ describe("P0-034: RewardsDistributor", function () {
 
       // Alice 锁仓 1000 tokens
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
       tokenId1 = 1n;
 
       // Bob 锁仓 2000 tokens (2倍)
       const doubleLock = ethers.parseEther("2000");
       await token.connect(bob).approve(await votingEscrow.getAddress(), doubleLock);
-      await votingEscrow.connect(bob).createLock(doubleLock, lockEnd);
+      await votingEscrow.connect(bob).create_lock(doubleLock, lockEnd);
       tokenId2 = 2n;
 
       // Minter 分配奖励
@@ -461,7 +461,7 @@ describe("P0-034: RewardsDistributor", function () {
       const lockEnd = ((latestTime + 365n * 24n * 60n * 60n) / WEEK) * WEEK;
 
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       console.log("✅ Step 1: Alice 创建 ve-NFT");
@@ -524,7 +524,7 @@ describe("P0-034: RewardsDistributor", function () {
       const latestTime = BigInt(await time.latest());
       const lockEnd = ((latestTime + 365n * 24n * 60n * 60n) / WEEK) * WEEK;
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 没有调用 notifyRewardAmount，直接领取
@@ -552,7 +552,7 @@ describe("P0-034: RewardsDistributor", function () {
       const shortLockEnd = ((latestTime + WEEK) / WEEK) * WEEK;
 
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).createLock(LOCK_AMOUNT, shortLockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, shortLockEnd);
       const tokenId = 1n;
 
       // 分配奖励

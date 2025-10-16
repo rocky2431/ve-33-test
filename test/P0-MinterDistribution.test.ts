@@ -295,7 +295,7 @@ describe("P0-Minter: Multiple Fixes", function () {
       // 用户创建大额锁仓
       await token.connect(user).approve(await votingEscrow.getAddress(), ethers.parseEther("10000000"));
       const currentTime = await time.latest();
-      await votingEscrow.connect(user).createLock(
+      await votingEscrow.connect(user).create_lock(
         ethers.parseEther("10000000"),
         currentTime + 4 * 365 * 86400 // 4年
       );
@@ -324,7 +324,7 @@ describe("P0-Minter: Multiple Fixes", function () {
       await token.transfer(user.address, ethers.parseEther("1000000"));
       await token.connect(user).approve(await votingEscrow.getAddress(), ethers.parseEther("1000000"));
       const currentTime = await time.latest();
-      await votingEscrow.connect(user).createLock(
+      await votingEscrow.connect(user).create_lock(
         ethers.parseEther("1000000"),
         currentTime + 365 * 86400
       );

@@ -383,7 +383,7 @@ describe("P0-047: Bribe Dust Attack Protection", function () {
       // 创建一个ve-NFT并模拟投票
       await mainToken.connect(user).approve(await votingEscrow.getAddress(), ethers.parseEther("1000"));
       const currentTime = await time.latest();
-      await votingEscrow.connect(user).createLock(ethers.parseEther("1000"), currentTime + 365 * 86400);
+      await votingEscrow.connect(user).create_lock(ethers.parseEther("1000"), currentTime + 365 * 86400);
 
       // getReward 应该能处理10个代币
       // 注意: 这需要 Voter 合约的支持,这里简化测试

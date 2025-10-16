@@ -81,7 +81,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       const lockEnd = currentTime + 365 * 86400; // 1年
 
       // 创建 ve-NFT
-      await votingEscrow.connect(attacker).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(attacker).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 尝试在同一区块立即投票
@@ -103,7 +103,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       const lockEnd = currentTime + 365 * 86400; // 1年
 
       // 创建 ve-NFT
-      await votingEscrow.connect(user).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(user).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 推进到下一个区块
@@ -131,7 +131,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       const lockEnd = currentTime + 365 * 86400; // 1年
 
       // 创建 ve-NFT
-      await votingEscrow.connect(user).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(user).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 推进到下一个区块(但不足1天)
@@ -154,7 +154,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       const lockEnd = currentTime + 365 * 86400; // 1年
 
       // 创建 ve-NFT
-      await votingEscrow.connect(user).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(user).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 推进到下一个区块
@@ -182,7 +182,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       const lockEnd = currentTime + 365 * 86400; // 1年
 
       // 创建 ve-NFT
-      await votingEscrow.connect(user).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(user).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 推进到下一个区块并等待最小持有期
@@ -225,7 +225,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       const lockEnd = currentTime + 365 * 86400;
 
       // 攻击者创建大额 ve-NFT
-      await votingEscrow.connect(attacker).createLock(flashLoanAmount, lockEnd);
+      await votingEscrow.connect(attacker).create_lock(flashLoanAmount, lockEnd);
       const tokenId = 1n;
 
       // 尝试立即投票以操纵投票权重
@@ -260,7 +260,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       const blockBefore = await ethers.provider.getBlockNumber();
 
       // 创建 ve-NFT
-      await votingEscrow.connect(user).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(user).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 检查 nftCreationBlock 映射
@@ -295,7 +295,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       await token.connect(user).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
       const currentTime = await time.latest();
       const lockEnd = currentTime + 365 * 86400;
-      await votingEscrow.connect(user).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(user).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 推进区块并等待最小持有期
@@ -315,7 +315,7 @@ describe("P0-024: Voter Flash Loan Protection", function () {
       await token.connect(user).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
       const currentTime = await time.latest();
       const lockEnd = currentTime + 7 * 86400; // 仅锁定1周
-      await votingEscrow.connect(user).createLock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(user).create_lock(LOCK_AMOUNT, lockEnd);
       const tokenId = 1n;
 
       // 推进区块并等待最小持有期
