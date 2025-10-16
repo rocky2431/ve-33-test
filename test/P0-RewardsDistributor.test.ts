@@ -158,14 +158,14 @@ describe("P0-034: RewardsDistributor", function () {
     beforeEach(async function () {
       // Alice 和 Bob 创建 ve-NFT
       const latestTime = BigInt(await time.latest());
-      lockEnd = ((latestTime + 365n * 24n * 60n * 60n) / WEEK) * WEEK;
+      const lockDuration = 365n * 24n * 60n * 60n; // 1年
 
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockDuration);
       tokenId1 = 1n;
 
       await token.connect(bob).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(bob).create_lock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(bob).create_lock(LOCK_AMOUNT, lockDuration);
       tokenId2 = 2n;
 
       // Minter 分配奖励
@@ -241,9 +241,9 @@ describe("P0-034: RewardsDistributor", function () {
 
     it("不同锁仓时长应该获得不同奖励", async function () {
       // Charlie 创建一个更长时间的锁仓 (2年)
-      const longLockEnd = ((BigInt(await time.latest()) + 2n * 365n * 24n * 60n * 60n) / WEEK) * WEEK;
+      const longLockDuration = 2n * 365n * 24n * 60n * 60n; // 2年
       await token.connect(charlie).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(charlie).create_lock(LOCK_AMOUNT, longLockEnd);
+      await votingEscrow.connect(charlie).create_lock(LOCK_AMOUNT, longLockDuration);
       const tokenId3 = 3n;
 
       // 等待下一个 epoch
@@ -281,13 +281,13 @@ describe("P0-034: RewardsDistributor", function () {
 
     beforeEach(async function () {
       const latestTime = BigInt(await time.latest());
-      lockEnd = ((latestTime + 365n * 24n * 60n * 60n) / WEEK) * WEEK;
+      const lockDuration = 365n * 24n * 60n * 60n; // 1年
 
       // Alice 创建3个 ve-NFT
       tokenIds = [];
       for (let i = 0; i < 3; i++) {
         await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-        await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
+        await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockDuration);
         tokenIds.push(BigInt(i + 1));
       }
 
@@ -374,17 +374,17 @@ describe("P0-034: RewardsDistributor", function () {
 
     beforeEach(async function () {
       const latestTime = BigInt(await time.latest());
-      const lockEnd = ((latestTime + 365n * 24n * 60n * 60n) / WEEK) * WEEK;
+      const lockDuration = 365n * 24n * 60n * 60n; // 1年
 
       // Alice 锁仓 1000 tokens
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockDuration);
       tokenId1 = 1n;
 
       // Bob 锁仓 2000 tokens (2倍)
       const doubleLock = ethers.parseEther("2000");
       await token.connect(bob).approve(await votingEscrow.getAddress(), doubleLock);
-      await votingEscrow.connect(bob).create_lock(doubleLock, lockEnd);
+      await votingEscrow.connect(bob).create_lock(doubleLock, lockDuration);
       tokenId2 = 2n;
 
       // Minter 分配奖励
@@ -458,10 +458,10 @@ describe("P0-034: RewardsDistributor", function () {
     it("Minter → RewardsDistributor → 用户 完整流程", async function () {
       // 1. 用户创建 ve-NFT
       const latestTime = BigInt(await time.latest());
-      const lockEnd = ((latestTime + 365n * 24n * 60n * 60n) / WEEK) * WEEK;
+      const lockDuration = 365n * 24n * 60n * 60n; // 1年
 
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockDuration);
       const tokenId = 1n;
 
       console.log("✅ Step 1: Alice 创建 ve-NFT");
@@ -522,9 +522,9 @@ describe("P0-034: RewardsDistributor", function () {
     it("没有奖励时领取应该返回0", async function () {
       // 创建 ve-NFT
       const latestTime = BigInt(await time.latest());
-      const lockEnd = ((latestTime + 365n * 24n * 60n * 60n) / WEEK) * WEEK;
+      const lockDuration = 365n * 24n * 60n * 60n; // 1年
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, lockDuration);
       const tokenId = 1n;
 
       // 没有调用 notifyRewardAmount，直接领取
@@ -547,12 +547,12 @@ describe("P0-034: RewardsDistributor", function () {
     });
 
     it("投票权重为0的 NFT 应该获得0奖励", async function () {
-      // 创建一个即将到期的 ve-NFT (1周后到期)
+      // 创建一个即将到期的 ve-NFT (1周锁定期)
       const latestTime = BigInt(await time.latest());
-      const shortLockEnd = ((latestTime + WEEK) / WEEK) * WEEK;
+      const shortLockDuration = WEEK; // 1周
 
       await token.connect(alice).approve(await votingEscrow.getAddress(), LOCK_AMOUNT);
-      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, shortLockEnd);
+      await votingEscrow.connect(alice).create_lock(LOCK_AMOUNT, shortLockDuration);
       const tokenId = 1n;
 
       // 分配奖励
