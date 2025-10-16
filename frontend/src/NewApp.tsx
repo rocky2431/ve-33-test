@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ChakraProvider } from '@chakra-ui/react'
 import { createWeb3Modal } from '@web3modal/wagmi'
 import { config, projectId } from './config/web3'
+import { theme } from './theme'
 import { Dashboard } from './components/Dashboard/Dashboard'
 import { SwapCard } from './components/Swap/SwapCard'
 import { LiquidityPage } from './components/Liquidity'
@@ -171,11 +173,13 @@ function AppContent() {
 
 function NewApp() {
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <AppContent />
-      </QueryClientProvider>
-    </WagmiProvider>
+    <ChakraProvider theme={theme}>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <AppContent />
+        </QueryClientProvider>
+      </WagmiProvider>
+    </ChakraProvider>
   )
 }
 
