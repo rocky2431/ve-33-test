@@ -1,21 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { Card, Table, Button, Input, type Column } from '../common'
-import { useVoteWeights } from '../../hooks/useVote'
+import { useVoteWeights, useAllGauges, type PoolInfo } from '../../hooks/useVote'
 import { formatTokenAmount } from '../../utils/format'
 import { colors, spacing, fontSize } from '../../constants/theme'
 import type { Address } from 'viem'
-
-interface Pool {
-  address: Address
-  name: string
-  tokenA: string
-  tokenB: string
-  stable: boolean
-  currentVotes: bigint
-  votingAPR: string
-  bribeAmount: string
-}
 
 export function VoteList() {
   const { address: userAddress, isConnected } = useAccount()
@@ -24,33 +13,17 @@ export function VoteList() {
 
   const { vote, isPending, isSuccess } = useVoteWeights()
 
-  // 示例池数据 - 实际应该从合约查询
-  const pools: Pool[] = [
-    {
-      address: '0x1234...' as Address,
-      name: 'SOLID/WBNB',
-      tokenA: 'SOLID',
-      tokenB: 'WBNB',
-      stable: false,
-      currentVotes: 1000000000000000000000n,
-      votingAPR: '45.2%',
-      bribeAmount: '1,234 USDT',
-    },
-    {
-      address: '0x5678...' as Address,
-      name: 'USDT/USDC',
-      tokenA: 'USDT',
-      tokenB: 'USDC',
-      stable: true,
-      currentVotes: 500000000000000000000n,
-      votingAPR: '28.5%',
-      bribeAmount: '856 USDT',
-    },
-  ]
+  // 从合约查询所有池数据
+  const { pools, isLoading } = useAllGauges()
 
-  const filteredPools = pools.filter((pool) =>
-    pool.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // 过滤池列表
+  const filteredPools = useMemo(() => {
+    if (!pools) return []
+    return pools.filter((pool) => {
+      const poolName = `${pool.token0Symbol || 'Unknown'}/${pool.token1Symbol || 'Unknown'}`
+      return poolName.toLowerCase().includes(searchTerm.toLowerCase())
+    })
+  }, [pools, searchTerm])
 
   const handleWeightChange = (poolAddress: Address, weight: number) => {
     const newSelected = new Map(selectedPools)
@@ -74,14 +47,15 @@ export function VoteList() {
     await vote(poolAddresses, weights)
   }
 
-  const columns: Column<Pool>[] = [
+  const columns: Column<PoolInfo>[] = [
     {
       key: 'name',
       title: '流动性池',
       render: (_, record) => (
         <div>
           <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-            {record.tokenA} / {record.tokenB}
+            {record.token0Symbol || record.token0.slice(0, 6)} /{' '}
+            {record.token1Symbol || record.token1.slice(0, 6)}
           </div>
           <div style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>
             {record.stable ? '稳定币池' : '波动性池'}
@@ -97,14 +71,18 @@ export function VoteList() {
     {
       key: 'apr',
       title: '投票 APR',
-      render: (_, record) => (
-        <span style={{ color: colors.success, fontWeight: '600' }}>{record.votingAPR}</span>
+      render: () => (
+        <span style={{ color: colors.textSecondary, fontSize: fontSize.sm }}>计算中...</span>
       ),
     },
     {
       key: 'bribe',
       title: '贿赂奖励',
-      render: (_, record) => record.bribeAmount,
+      render: (_, record) => (
+        <span style={{ fontSize: fontSize.sm, color: colors.textSecondary }}>
+          {record.bribeAddress ? '有奖励' : '无'}
+        </span>
+      ),
     },
     {
       key: 'weight',
@@ -131,6 +109,17 @@ export function VoteList() {
         <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
           <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>🗳️</div>
           <div>请先连接钱包</div>
+        </div>
+      </Card>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Card title="投票">
+        <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
+          <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>⏳</div>
+          <div>加载池数据中...</div>
         </div>
       </Card>
     )

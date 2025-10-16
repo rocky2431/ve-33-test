@@ -1,58 +1,30 @@
+import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { Card, Table, Button, Badge, type Column } from '../common'
-import { useClaimRewards } from '../../hooks/useRewards'
+import { useClaimRewards, useUserRewards, type RewardItem } from '../../hooks/useRewards'
 import { formatTokenAmount } from '../../utils/format'
 import { colors, spacing, fontSize } from '../../constants/theme'
-import type { Address } from 'viem'
-
-interface RewardItem {
-  type: 'fee' | 'bribe' | 'emission'
-  poolAddress: Address
-  poolName: string
-  tokenA: string
-  tokenB: string
-  rewardToken: string
-  amount: bigint
-  value: string
-}
 
 export function ClaimRewards() {
   const { isConnected } = useAccount()
   const { claimAll, isPending, isSuccess } = useClaimRewards()
 
-  // 示例奖励数据
-  const rewardItems: RewardItem[] = [
-    {
-      type: 'fee',
-      poolAddress: '0x1234...' as Address,
-      poolName: 'SOLID/WBNB',
-      tokenA: 'SOLID',
-      tokenB: 'WBNB',
-      rewardToken: 'WBNB',
-      amount: 5000000000000000n,
-      value: '$125.50',
-    },
-    {
-      type: 'bribe',
-      poolAddress: '0x1234...' as Address,
-      poolName: 'SOLID/WBNB',
-      tokenA: 'SOLID',
-      tokenB: 'WBNB',
-      rewardToken: 'USDT',
-      amount: 83200000n,
-      value: '$83.20',
-    },
-    {
-      type: 'emission',
-      poolAddress: '0x5678...' as Address,
-      poolName: 'USDT/USDC',
-      tokenA: 'USDT',
-      tokenB: 'USDC',
-      rewardToken: 'SOLID',
-      amount: 250000000000000000n,
-      value: '$45.30',
-    },
-  ]
+  // 从合约查询真实奖励数据
+  const { rewards: rewardItems, isLoading } = useUserRewards()
+
+  // 计算奖励价值统计（简化：不显示价值，只显示数量）
+  const rewardStats = useMemo(() => {
+    const feeRewards = rewardItems.filter((r) => r.type === 'fee')
+    const bribeRewards = rewardItems.filter((r) => r.type === 'bribe')
+    const emissionRewards = rewardItems.filter((r) => r.type === 'emission')
+
+    return {
+      feeCount: feeRewards.length,
+      bribeCount: bribeRewards.length,
+      emissionCount: emissionRewards.length,
+      totalCount: rewardItems.length,
+    }
+  }, [rewardItems])
 
   const getRewardTypeLabel = (type: string) => {
     switch (type) {
@@ -82,7 +54,10 @@ export function ClaimRewards() {
       render: (_, record) => (
         <div>
           <div style={{ fontWeight: '600' }}>
-            {record.tokenA} / {record.tokenB}
+            {record.token0Symbol || 'Unknown'} / {record.token1Symbol || 'Unknown'}
+          </div>
+          <div style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>
+            {record.poolAddress.slice(0, 6)}...{record.poolAddress.slice(-4)}
           </div>
         </div>
       ),
@@ -96,16 +71,15 @@ export function ClaimRewards() {
       key: 'amount',
       title: '数量',
       render: (_, record) => {
-        const decimals = record.rewardToken === 'USDT' ? 6 : 18
-        return `${formatTokenAmount(record.amount, decimals, 4)} ${record.rewardToken}`
+        return `${formatTokenAmount(record.amount, record.decimals, 4)} ${record.rewardToken}`
       },
     },
     {
       key: 'value',
       title: '价值',
       align: 'right',
-      render: (_, record) => (
-        <span style={{ color: colors.success, fontWeight: '600' }}>{record.value}</span>
+      render: () => (
+        <span style={{ color: colors.textSecondary, fontSize: fontSize.sm }}>计算中...</span>
       ),
     },
   ]
@@ -120,6 +94,17 @@ export function ClaimRewards() {
         <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
           <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>👛</div>
           <div>请先连接钱包</div>
+        </div>
+      </Card>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Card title="领取奖励">
+        <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
+          <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>⏳</div>
+          <div>加载奖励数据中...</div>
         </div>
       </Card>
     )
@@ -165,7 +150,7 @@ export function ClaimRewards() {
               color: colors.success,
             }}
           >
-            $125.50
+            {rewardStats.feeCount} 项
           </div>
         </div>
         <div
@@ -186,7 +171,7 @@ export function ClaimRewards() {
               color: colors.info,
             }}
           >
-            $83.20
+            {rewardStats.bribeCount} 项
           </div>
         </div>
         <div
@@ -207,7 +192,7 @@ export function ClaimRewards() {
               color: colors.warning,
             }}
           >
-            $45.30
+            {rewardStats.emissionCount} 项
           </div>
         </div>
         <div
@@ -218,7 +203,7 @@ export function ClaimRewards() {
           }}
         >
           <div style={{ fontSize: fontSize.sm, color: colors.textSecondary }}>
-            总价值
+            奖励总数
           </div>
           <div
             style={{
@@ -228,7 +213,7 @@ export function ClaimRewards() {
               color: colors.primary,
             }}
           >
-            $254.00
+            {rewardStats.totalCount} 项
           </div>
         </div>
       </div>
