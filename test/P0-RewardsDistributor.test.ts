@@ -96,6 +96,7 @@ describe("P0-034: RewardsDistributor", function () {
 
       // Minter 给 RewardsDistributor 转账
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
 
       // 获取当前 epoch
       const currentEpoch = await rewardsDistributor.getCurrentEpoch();
@@ -116,6 +117,7 @@ describe("P0-034: RewardsDistributor", function () {
       // 第一个 epoch
       const epoch1 = await rewardsDistributor.getCurrentEpoch();
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       // 等待一周，进入下一个 epoch
@@ -125,6 +127,7 @@ describe("P0-034: RewardsDistributor", function () {
       const epoch2 = await rewardsDistributor.getCurrentEpoch();
       const reward2 = ethers.parseEther("15000");
       await token.connect(minter).transfer(rewardsDistributorAddress, reward2);
+      await token.connect(minter).approve(rewardsDistributorAddress, reward2);
       await rewardsDistributor.connect(minter).notifyRewardAmount(reward2);
 
       // 验证两个 epoch 的奖励独立
@@ -171,6 +174,7 @@ describe("P0-034: RewardsDistributor", function () {
       // Minter 分配奖励
       const rewardsDistributorAddress = await rewardsDistributor.getAddress();
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       console.log("✅ claimRebase 测试环境准备完成");
@@ -252,6 +256,7 @@ describe("P0-034: RewardsDistributor", function () {
       // 新的一周奖励
       const rewardsDistributorAddress = await rewardsDistributor.getAddress();
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       // Alice (1年锁仓) vs Charlie (2年锁仓)
@@ -294,6 +299,7 @@ describe("P0-034: RewardsDistributor", function () {
       // Minter 分配奖励
       const rewardsDistributorAddress = await rewardsDistributor.getAddress();
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       console.log(`✅ 批量领取测试准备: Alice 拥有 ${tokenIds.length} 个 NFT`);
@@ -322,6 +328,7 @@ describe("P0-034: RewardsDistributor", function () {
       await time.increase(WEEK);
       const rewardsDistributorAddress = await rewardsDistributor.getAddress();
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       // 批量领取所有3个 NFT
@@ -390,6 +397,7 @@ describe("P0-034: RewardsDistributor", function () {
       // Minter 分配奖励
       const rewardsDistributorAddress = await rewardsDistributor.getAddress();
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       console.log("✅ _calculateReward 测试准备完成");
@@ -433,6 +441,7 @@ describe("P0-034: RewardsDistributor", function () {
       const rewardsDistributorAddress = await rewardsDistributor.getAddress();
       const reward2 = ethers.parseEther("20000"); // 不同金额
       await token.connect(minter).transfer(rewardsDistributorAddress, reward2);
+      await token.connect(minter).approve(rewardsDistributorAddress, reward2);
       await rewardsDistributor.connect(minter).notifyRewardAmount(reward2);
 
       // Epoch 2: Alice 再次领取
@@ -469,6 +478,7 @@ describe("P0-034: RewardsDistributor", function () {
       // 2. Minter 分配奖励给 RewardsDistributor
       const rewardsDistributorAddress = await rewardsDistributor.getAddress();
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       const epoch = await rewardsDistributor.getCurrentEpoch();
@@ -501,6 +511,7 @@ describe("P0-034: RewardsDistributor", function () {
 
         const currentEpoch = await rewardsDistributor.getCurrentEpoch();
         await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
         await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
         const balanceBefore = await token.balanceOf(alice.address);
@@ -558,6 +569,7 @@ describe("P0-034: RewardsDistributor", function () {
       // 分配奖励
       const rewardsDistributorAddress = await rewardsDistributor.getAddress();
       await token.connect(minter).transfer(rewardsDistributorAddress, REWARD_AMOUNT);
+      await token.connect(minter).approve(rewardsDistributorAddress, REWARD_AMOUNT);
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       // 等待锁定到期
