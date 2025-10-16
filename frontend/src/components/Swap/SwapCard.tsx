@@ -190,7 +190,7 @@ export function SwapCard() {
       />
 
       {/* 价格信息 */}
-      {amountOut && tokenIn && tokenOut && amountInBigInt > 0n && (
+      {amountOut && tokenIn && tokenOut && amountInBigInt > 0n ? (
         <div
           style={{
             marginTop: '16px',
@@ -229,7 +229,7 @@ export function SwapCard() {
             <span>{slippage}%</span>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* 操作按钮 */}
       <Button

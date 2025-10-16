@@ -91,7 +91,7 @@ export function TokenInput({
         />
 
         {/* MAX 按钮 */}
-        {(balance !== undefined && balance > 0n && !readOnly) ? (
+        {balance !== undefined && balance > 0n && !readOnly && (
           <button
             onClick={handleMaxClick}
             style={{
@@ -107,7 +107,7 @@ export function TokenInput({
           >
             MAX
           </button>
-        ) : null}
+        )}
 
         {/* Token 选择按钮 */}
         <button

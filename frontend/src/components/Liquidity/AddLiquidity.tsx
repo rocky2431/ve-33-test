@@ -209,7 +209,7 @@ export function AddLiquidity() {
       </div>
 
       {/* 池信息 */}
-      {pairAddress && reserve0 && reserve1 && totalSupply && totalSupply > 0n && (
+      {pairAddress && reserve0 && reserve1 && totalSupply && totalSupply > 0n ? (
         <div
           style={{
             marginTop: spacing.md,
@@ -237,7 +237,7 @@ export function AddLiquidity() {
             </span>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* 首次创建池提示 */}
       {!pairAddress && tokenA && tokenB && (
