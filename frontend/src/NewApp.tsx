@@ -12,7 +12,7 @@ import { CreateLock } from './components/Lock/CreateLock'
 import { MyVeNFTs } from './components/Lock/MyVeNFTs'
 import { Vote } from './components/Vote'
 import { Rewards } from './components/Rewards'
-import { Tabs, type Tab, useToast, ToastContainer, LanguageSwitcher, ThemeToggle } from './components/common'
+import { Tabs, type Tab, useToast, ToastContainer, LanguageSwitcher, ThemeToggle, NotificationProvider } from './components/common'
 import { useTranslation } from 'react-i18next'
 import './App.css'
 
@@ -93,6 +93,9 @@ function AppContent() {
 
   return (
     <>
+      {/* Sonner 通知系统 */}
+      <NotificationProvider />
+
       {/* 自定义 Header */}
       <header
         style={{
