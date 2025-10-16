@@ -59,8 +59,14 @@ contract Voter is ReentrancyGuard {
     /// @notice NFT 上次投票时间
     mapping(uint256 => uint256) public lastVoted;
 
+    /// @notice NFT 创建区块号 (用于Flash Loan防护)
+    mapping(uint256 => uint256) public nftCreationBlock;
+
     /// @notice 总投票权重
     uint256 public totalWeight;
+
+    /// @notice 最小持有期 (1天,防止Flash Loan攻击)
+    uint256 public constant MIN_HOLDING_PERIOD = 1 days;
 
     /// @notice Gauge 类型白名单
     mapping(address => bool) public isWhitelisted;
@@ -135,8 +141,30 @@ contract Voter is ReentrancyGuard {
         require(_poolVote.length > 0, "Voter: no pools");
         require(_poolVote.length <= 10, "Voter: too many pools");
 
-        // 检查投票冷却时间 (1 周)
-        require(block.timestamp >= lastVoted[_tokenId] + 1 weeks, "Voter: already voted this week");
+        // ✅ P0-024: Flash Loan 攻击防护
+        // 1. 防止同区块创建和投票
+        if (nftCreationBlock[_tokenId] == 0) {
+            // 首次投票,记录创建区块号(使用当前区块作为近似)
+            nftCreationBlock[_tokenId] = block.number - 1;
+        }
+        require(
+            block.number > nftCreationBlock[_tokenId],
+            "Voter: cannot vote in creation block"
+        );
+
+        // 2. 检查最小持有期 (1天)
+        if (lastVoted[_tokenId] > 0) {
+            require(
+                block.timestamp >= lastVoted[_tokenId] + 1 weeks,
+                "Voter: already voted this week"
+            );
+        } else {
+            // 首次投票需要至少持有1天
+            require(
+                block.timestamp >= IVotingEscrow(ve).locked(_tokenId).end - 365 days + MIN_HOLDING_PERIOD,
+                "Voter: minimum holding period not met"
+            );
+        }
 
         uint256 _weight = IVotingEscrow(ve).balanceOfNFT(_tokenId);
         require(_weight > 0, "Voter: no voting power");
