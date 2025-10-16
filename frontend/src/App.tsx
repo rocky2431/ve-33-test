@@ -1,47 +1,60 @@
+import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import './App.css'
+import { SwapCard } from './components/Swap/SwapCard'
+import { useTokenBalance } from './hooks/useTokenBalance'
+import { TOKENS } from './constants/tokens'
+import { formatTokenAmount } from './utils/format'
+
+type Page = 'swap' | 'liquidity' | 'info'
 
 function App() {
   const { address, isConnected } = useAccount()
+  const [currentPage, setCurrentPage] = useState<Page>('swap')
 
-  // 从环境变量读取合约地址
-  const contracts = {
-    token: import.meta.env.VITE_CONTRACT_TOKEN,
-    factory: import.meta.env.VITE_CONTRACT_FACTORY,
-    router: import.meta.env.VITE_CONTRACT_ROUTER,
-    weth: import.meta.env.VITE_CONTRACT_WETH,
-    votingEscrow: import.meta.env.VITE_CONTRACT_VOTING_ESCROW,
-    voter: import.meta.env.VITE_CONTRACT_VOTER,
-    minter: import.meta.env.VITE_CONTRACT_MINTER,
-  }
+  // 查询 SOLID 余额
+  const { balance: solidBalance } = useTokenBalance(
+    TOKENS.SOLID.address,
+    address
+  )
 
-  const explorerUrl = import.meta.env.VITE_BLOCK_EXPLORER
+  // 查询 WBNB 余额
+  const { balance: wbnbBalance } = useTokenBalance(
+    TOKENS.WBNB.address,
+    address
+  )
 
   return (
-    <div style={{
-      padding: '40px',
-      backgroundColor: '#0a0a0a',
-      minHeight: '100vh',
-      color: '#fff',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* 标题和钱包连接 */}
-        <header style={{ marginBottom: '60px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '24px'
-          }}>
-            <h1 style={{
-              fontSize: '48px',
-              fontWeight: '700',
-              margin: 0,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
+    <div
+      style={{
+        padding: '20px',
+        backgroundColor: '#0a0a0a',
+        minHeight: '100vh',
+        color: '#fff',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+      }}
+    >
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        {/* Header */}
+        <header style={{ marginBottom: '40px' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+            }}
+          >
+            <h1
+              style={{
+                fontSize: '32px',
+                fontWeight: '700',
+                margin: 0,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
               ve(3,3) DEX
             </h1>
 
@@ -49,192 +62,192 @@ function App() {
             <w3m-button />
           </div>
 
-          <p style={{ fontSize: '18px', color: '#888', textAlign: 'center' }}>
-            去中心化交易所 - BSC Testnet
-          </p>
+          {/* 导航 */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '12px',
+              marginBottom: '20px',
+            }}
+          >
+            {(['swap', 'liquidity', 'info'] as const).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  backgroundColor:
+                    currentPage === page ? '#667eea' : '#1a1a1a',
+                  color: '#fff',
+                  border: '1px solid #333',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  textTransform: 'capitalize',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {page === 'swap'
+                  ? 'Swap'
+                  : page === 'liquidity'
+                  ? '流动性'
+                  : '信息'}
+              </button>
+            ))}
+          </div>
 
-          {/* 连接状态显示 */}
-          {isConnected && address && (
-            <div style={{
-              marginTop: '24px',
-              padding: '16px',
-              backgroundColor: '#1a1a1a',
-              borderRadius: '12px',
-              border: '1px solid #333',
-              textAlign: 'center'
-            }}>
-              <p style={{ color: '#4ade80', fontSize: '14px', margin: 0 }}>
-                ✅ 已连接钱包
-              </p>
-              <p style={{
-                color: '#888',
-                fontSize: '12px',
-                fontFamily: 'monospace',
-                marginTop: '8px'
-              }}>
-                {address}
-              </p>
+          {/* 余额卡片 */}
+          {isConnected && (
+            <div
+              style={{
+                padding: '16px',
+                backgroundColor: '#1a1a1a',
+                borderRadius: '12px',
+                border: '1px solid #333',
+              }}
+            >
+              <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>
+                您的余额
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '14px',
+                }}
+              >
+                <span>
+                  SOLID: {formatTokenAmount(solidBalance, 18, 4)}
+                </span>
+                <span>
+                  WBNB: {formatTokenAmount(wbnbBalance, 18, 4)}
+                </span>
+              </div>
             </div>
           )}
         </header>
 
-        {/* 合约地址卡片 */}
-        <div style={{
-          display: 'grid',
-          gap: '24px',
-          marginBottom: '40px'
-        }}>
-          {/* 核心 AMM 层 */}
-          <section style={{
-            backgroundColor: '#1a1a1a',
-            padding: '32px',
-            borderRadius: '16px',
-            border: '1px solid #333'
-          }}>
-            <h2 style={{
-              fontSize: '24px',
-              marginBottom: '24px',
-              color: '#667eea'
-            }}>
-              核心 AMM 层
-            </h2>
-            <div style={{ display: 'grid', gap: '16px' }}>
-              <ContractRow
-                label="Token (SOLID)"
-                address={contracts.token}
-                explorerUrl={explorerUrl}
-              />
-              <ContractRow
-                label="Factory"
-                address={contracts.factory}
-                explorerUrl={explorerUrl}
-              />
-              <ContractRow
-                label="Router"
-                address={contracts.router}
-                explorerUrl={explorerUrl}
-              />
-              <ContractRow
-                label="WETH"
-                address={contracts.weth}
-                explorerUrl={explorerUrl}
-              />
-            </div>
-          </section>
+        {/* Main Content */}
+        <main>
+          {currentPage === 'swap' && <SwapCard />}
 
-          {/* ve(3,3) 治理层 */}
-          <section style={{
-            backgroundColor: '#1a1a1a',
-            padding: '32px',
-            borderRadius: '16px',
-            border: '1px solid #333'
-          }}>
-            <h2 style={{
-              fontSize: '24px',
-              marginBottom: '24px',
-              color: '#764ba2'
-            }}>
-              ve(3,3) 治理层
-            </h2>
-            <div style={{ display: 'grid', gap: '16px' }}>
-              <ContractRow
-                label="VotingEscrow"
-                address={contracts.votingEscrow}
-                explorerUrl={explorerUrl}
-              />
-              <ContractRow
-                label="Voter"
-                address={contracts.voter}
-                explorerUrl={explorerUrl}
-              />
-              <ContractRow
-                label="Minter"
-                address={contracts.minter}
-                explorerUrl={explorerUrl}
-              />
+          {currentPage === 'liquidity' && (
+            <div
+              style={{
+                padding: '40px',
+                textAlign: 'center',
+                backgroundColor: '#1a1a1a',
+                borderRadius: '16px',
+                border: '1px solid #333',
+              }}
+            >
+              <h2 style={{ fontSize: '20px', marginBottom: '12px' }}>
+                流动性功能
+              </h2>
+              <p style={{ color: '#888' }}>即将推出...</p>
             </div>
-          </section>
-        </div>
+          )}
 
-        {/* 状态信息 */}
-        <div style={{
-          backgroundColor: '#1a1a1a',
-          padding: '24px',
-          borderRadius: '12px',
-          border: '1px solid #333',
-          textAlign: 'center'
-        }}>
-          <p style={{ color: '#888', fontSize: '14px' }}>
-            ✅ 合约已成功部署到 BSC Testnet
+          {currentPage === 'info' && (
+            <div
+              style={{
+                backgroundColor: '#1a1a1a',
+                padding: '32px',
+                borderRadius: '16px',
+                border: '1px solid #333',
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: '20px',
+                  marginBottom: '20px',
+                  color: '#667eea',
+                }}
+              >
+                合约信息
+              </h2>
+
+              <div style={{ display: 'grid', gap: '12px' }}>
+                <InfoRow
+                  label="SOLID Token"
+                  value={import.meta.env.VITE_CONTRACT_TOKEN}
+                />
+                <InfoRow
+                  label="WBNB"
+                  value={import.meta.env.VITE_CONTRACT_WETH}
+                />
+                <InfoRow
+                  label="Router"
+                  value={import.meta.env.VITE_CONTRACT_ROUTER}
+                />
+                <InfoRow
+                  label="Factory"
+                  value={import.meta.env.VITE_CONTRACT_FACTORY}
+                />
+              </div>
+
+              <div
+                style={{
+                  marginTop: '20px',
+                  padding: '16px',
+                  backgroundColor: '#0a0a0a',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: '#888',
+                  textAlign: 'center',
+                }}
+              >
+                🌐 BSC Testnet (Chain ID: 97)
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* Footer */}
+        <footer
+          style={{
+            marginTop: '40px',
+            textAlign: 'center',
+            fontSize: '12px',
+            color: '#666',
+          }}
+        >
+          <p>ve(3,3) DEX - Vote-Escrowed Decentralized Exchange</p>
+          <p style={{ marginTop: '8px' }}>
+            基于 Solidly 的 ve(3,3) 机制 | BSC Testnet
           </p>
-          <p style={{ color: '#888', fontSize: '14px', marginTop: '8px' }}>
-            {isConnected
-              ? '🟢 Web3 已连接 - 准备与合约交互'
-              : '🔵 请连接钱包开始使用'
-            }
-          </p>
-        </div>
+        </footer>
       </div>
     </div>
   )
 }
 
-// 合约地址行组件
-function ContractRow({
-  label,
-  address,
-  explorerUrl
-}: {
-  label: string
-  address: string
-  explorerUrl: string
-}) {
+// 信息行组件
+function InfoRow({ label, value }: { label: string; value: string }) {
+  const shortenAddress = (addr: string) =>
+    `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`
+
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '16px',
-      backgroundColor: '#0a0a0a',
-      borderRadius: '8px',
-      border: '1px solid #222'
-    }}>
-      <span style={{
-        fontWeight: '600',
-        color: '#aaa',
-        minWidth: '140px'
-      }}>
-        {label}
-      </span>
-      <span style={{
-        fontFamily: 'monospace',
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        padding: '12px',
+        backgroundColor: '#0a0a0a',
+        borderRadius: '8px',
         fontSize: '14px',
-        color: '#ccc',
-        flex: 1,
-        marginLeft: '16px',
-        marginRight: '16px'
-      }}>
-        {address}
-      </span>
-      <a
-        href={`${explorerUrl}/address/${address}`}
-        target="_blank"
-        rel="noopener noreferrer"
+      }}
+    >
+      <span style={{ color: '#aaa' }}>{label}</span>
+      <span
         style={{
-          padding: '8px 16px',
-          backgroundColor: '#667eea',
-          color: '#fff',
-          textDecoration: 'none',
-          borderRadius: '6px',
-          fontSize: '14px',
-          fontWeight: '500',
-          transition: 'background-color 0.2s'
+          fontFamily: 'monospace',
+          color: '#ccc',
         }}
-        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5568d3'}
-        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#667eea'}
       >
-        查看
-      </a>
+        {shortenAddress(value)}
+      </span>
     </div>
   )
 }
