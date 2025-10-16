@@ -41,7 +41,7 @@ describe("P0-034: RewardsDistributor", function () {
 
     // 1. 部署 Token
     const TokenFactory = await ethers.getContractFactory("Token");
-    token = await TokenFactory.deploy();
+    token = await TokenFactory.deploy("Paimon Token", "PAIMON");
     await token.waitForDeployment();
     const tokenAddress = await token.getAddress();
 

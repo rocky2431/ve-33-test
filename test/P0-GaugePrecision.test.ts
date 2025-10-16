@@ -68,8 +68,8 @@ describe("P0-042: Gauge Precision Fix", function () {
     );
     await gauge.waitForDeployment();
 
-    // 分配代币
-    const largeAmount = ethers.parseEther("10000000000"); // 100亿
+    // 分配代币 (Token初始供应20M,分配不要超过这个量)
+    const largeAmount = ethers.parseEther("5000000"); // 500万 (留够给3个用户)
     await stakingToken.transfer(alice.address, largeAmount);
     await stakingToken.transfer(bob.address, largeAmount);
     await stakingToken.transfer(carol.address, largeAmount);

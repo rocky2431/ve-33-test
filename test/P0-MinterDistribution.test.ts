@@ -75,11 +75,21 @@ describe("P0-Minter: Multiple Fixes", function () {
     await minter.setVoter(await voter.getAddress());
     await token.setMinter(await minter.getAddress());
 
-    // 设置 RewardsDistributor
-    await minter.setRewardsDistributor(await rewardsDistributor.getAddress());
+    // 设置 RewardsDistributor (需要用token合约调用)
+    const tokenAddress = await token.getAddress();
+    await ethers.provider.send("hardhat_impersonateAccount", [tokenAddress]);
+    const tokenSigner = await ethers.getSigner(tokenAddress);
 
-    // 启动 Minter
-    await minter.start();
+    // 给 token 合约地址转些 ETH 用于 gas
+    await owner.sendTransaction({
+      to: tokenAddress,
+      value: ethers.parseEther("1")
+    });
+
+    await minter.connect(tokenSigner).setRewardsDistributor(await rewardsDistributor.getAddress());
+    await minter.connect(tokenSigner).start();
+
+    await ethers.provider.send("hardhat_stopImpersonatingAccount", [tokenAddress]);
   });
 
   describe("P0-035: 30/70 排放分配", function () {

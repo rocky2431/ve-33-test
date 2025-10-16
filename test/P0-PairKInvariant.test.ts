@@ -78,7 +78,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       await token0.approve(await router.getAddress(), INITIAL_LIQUIDITY_0);
       await token1.approve(await router.getAddress(), INITIAL_LIQUIDITY_1);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       await router.addLiquidity(
         await token0.getAddress(),
         await token1.getAddress(),
@@ -101,7 +101,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       const swapAmount = ethers.parseEther("100");
       await token0.connect(user).approve(await router.getAddress(), swapAmount);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       const routes = [{
         from: await token0.getAddress(),
         to: await token1.getAddress(),
@@ -154,7 +154,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       const smallSwapAmount = ethers.parseEther("1");
       await token0.connect(user).approve(await router.getAddress(), smallSwapAmount);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       const routes = [{
         from: await token0.getAddress(),
         to: await token1.getAddress(),
@@ -185,7 +185,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       const largeSwapAmount = INITIAL_LIQUIDITY_0 / 10n;
       await token0.connect(user).approve(await router.getAddress(), largeSwapAmount);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       const routes = [{
         from: await token0.getAddress(),
         to: await token1.getAddress(),
@@ -214,7 +214,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       await token0.approve(await router.getAddress(), INITIAL_LIQUIDITY_0);
       await token1.approve(await router.getAddress(), INITIAL_LIQUIDITY_1);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       await router.addLiquidity(
         await token0.getAddress(),
         await token1.getAddress(),
@@ -236,7 +236,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       const swapAmount = ethers.parseEther("100");
       await token0.connect(user).approve(await router.getAddress(), swapAmount);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       const routes = [{
         from: await token0.getAddress(),
         to: await token1.getAddress(),
@@ -266,7 +266,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       const swapAmount = ethers.parseEther("100");
       await token0.connect(user).approve(await router.getAddress(), swapAmount);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       const routesStable = [{
         from: await token0.getAddress(),
         to: await token1.getAddress(),
@@ -299,7 +299,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       await token0.approve(await router.getAddress(), INITIAL_LIQUIDITY_0);
       await token1.approve(await router.getAddress(), INITIAL_LIQUIDITY_1);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       await router.addLiquidity(
         await token0.getAddress(),
         await token1.getAddress(),
@@ -359,7 +359,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       await token0.approve(await router.getAddress(), INITIAL_LIQUIDITY_0);
       await token1.approve(await router.getAddress(), INITIAL_LIQUIDITY_1);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       await router.addLiquidity(
         await token0.getAddress(),
         await token1.getAddress(),
@@ -379,7 +379,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
 
       // 执行多次 swap
       const swapAmount = ethers.parseEther("10");
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       const routes = [{
         from: await token0.getAddress(),
         to: await token1.getAddress(),
@@ -452,7 +452,7 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       await token0.approve(await router.getAddress(), INITIAL_LIQUIDITY_0);
       await token1.approve(await router.getAddress(), INITIAL_LIQUIDITY_1);
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
+      const deadline = (await time.latest()) + 3600;
       await router.addLiquidity(
         await token0.getAddress(),
         await token1.getAddress(),
