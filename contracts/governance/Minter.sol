@@ -128,7 +128,8 @@ contract Minter {
             // 衰减
             weekly = (_weekly * EMISSION_DECAY) / EMISSION_BASE;
 
-            emit Mint(msg.sender, _emission, _circulatingSupply);
+            // 注意: 这里只是更新 period,不进行分配,所以 forVe 和 forGauges 都是 0
+            emit Mint(msg.sender, _emission, _circulatingSupply, 0, 0);
 
             return _emission;
         }

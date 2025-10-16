@@ -160,8 +160,9 @@ contract Voter is ReentrancyGuard {
             );
         } else {
             // 首次投票需要至少持有1天
+            (, uint256 lockEnd) = IVotingEscrow(ve).locked(_tokenId);
             require(
-                block.timestamp >= IVotingEscrow(ve).locked(_tokenId).end - 365 days + MIN_HOLDING_PERIOD,
+                block.timestamp >= lockEnd - 365 days + MIN_HOLDING_PERIOD,
                 "Voter: minimum holding period not met"
             );
         }
