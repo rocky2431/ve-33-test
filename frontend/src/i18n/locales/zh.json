@@ -24,7 +24,10 @@
     "approve": "授权",
     "approved": "已授权",
     "pending": "处理中",
-    "failed": "失败"
+    "failed": "失败",
+    "selectToken": "选择代币",
+    "searchToken": "搜索代币名称或地址",
+    "noTokensFound": "未找到代币"
   },
   "nav": {
     "dashboard": "仪表盘",

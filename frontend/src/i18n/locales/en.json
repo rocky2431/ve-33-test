@@ -24,7 +24,10 @@
     "approve": "Approve",
     "approved": "Approved",
     "pending": "Pending",
-    "failed": "Failed"
+    "failed": "Failed",
+    "selectToken": "Select Token",
+    "searchToken": "Search token name or address",
+    "noTokensFound": "No tokens found"
   },
   "nav": {
     "dashboard": "Dashboard",
