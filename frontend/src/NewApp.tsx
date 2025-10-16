@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ChakraProvider } from '@chakra-ui/react'
+import { ChakraProvider, Flex, Box } from '@chakra-ui/react'
+import { AnimatePresence } from 'framer-motion'
 import { createWeb3Modal } from '@web3modal/wagmi'
 import { config, projectId } from './config/web3'
 import { theme } from './theme'
@@ -12,12 +13,10 @@ import { CreateLock } from './components/Lock/CreateLock'
 import { MyVeNFTs } from './components/Lock/MyVeNFTs'
 import { Vote } from './components/Vote'
 import { Rewards } from './components/Rewards'
-import { Tabs, type Tab, useToast, ToastContainer, LanguageSwitcher, ThemeToggle, NotificationProvider } from './components/common'
+import { Tabs, type Tab, useToast, ToastContainer, NotificationProvider } from './components/common'
+import { Header, Footer, PageContainer, type Page } from './components/Layout'
 import { useTranslation } from 'react-i18next'
 import './App.css'
-
-// 定义 Page 类型
-type Page = 'dashboard' | 'swap' | 'liquidity' | 'lock' | 'vote' | 'rewards'
 
 // 创建 QueryClient
 const queryClient = new QueryClient()
@@ -45,9 +44,9 @@ function AppContent() {
 
       case 'swap':
         return (
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <Box maxW="600px" mx="auto">
             <SwapCard />
-          </div>
+          </Box>
         )
 
       case 'liquidity':
@@ -57,33 +56,33 @@ function AppContent() {
         const lockTabs: Tab[] = [
           {
             key: 'create',
-            label: '创建锁仓',
+            label: t('lock.createLock'),
             content: <CreateLock />,
           },
           {
             key: 'my',
-            label: '我的 ve-NFT',
+            label: t('lock.myVeNFTs'),
             content: <MyVeNFTs />,
           },
         ]
         return (
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <Box maxW="600px" mx="auto">
             <Tabs tabs={lockTabs} defaultActiveKey="create" />
-          </div>
+          </Box>
         )
 
       case 'vote':
         return (
-          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <Box maxW="1000px" mx="auto">
             <Vote />
-          </div>
+          </Box>
         )
 
       case 'rewards':
         return (
-          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <Box maxW="1000px" mx="auto">
             <Rewards />
-          </div>
+          </Box>
         )
 
       default:
@@ -92,91 +91,26 @@ function AppContent() {
   }
 
   return (
-    <>
+    <Flex direction="column" minH="100vh">
       {/* Sonner 通知系统 */}
       <NotificationProvider />
 
-      {/* 自定义 Header */}
-      <header
-        style={{
-          backgroundColor: '#1a1a1a',
-          borderBottom: '1px solid #333',
-          padding: '16px 24px',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <h1
-            style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              margin: 0,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              cursor: 'pointer',
-            }}
-            onClick={() => handlePageChange('dashboard')}
-          >
-            ve(3,3) DEX
-          </h1>
+      {/* Header */}
+      <Header currentPage={currentPage} onPageChange={handlePageChange} />
 
-          <nav style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {(['dashboard', 'swap', 'liquidity', 'lock', 'vote', 'rewards'] as Page[]).map((page) => (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  backgroundColor: currentPage === page ? '#667eea' : 'transparent',
-                  color: currentPage === page ? '#fff' : '#aaa',
-                  border: currentPage === page ? 'none' : '1px solid #333',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {t(`nav.${page}`)}
-              </button>
-            ))}
-          </nav>
+      {/* 主内容区域 */}
+      <Box flex="1">
+        <AnimatePresence mode="wait">
+          <PageContainer key={currentPage}>{renderPage()}</PageContainer>
+        </AnimatePresence>
+      </Box>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <ThemeToggle />
-            <LanguageSwitcher />
-            <w3m-button />
-          </div>
-        </div>
-      </header>
+      {/* Footer */}
+      <Footer />
 
-      {/* 主内容 */}
-      <main
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '24px',
-          minHeight: 'calc(100vh - 80px)',
-        }}
-      >
-        {renderPage()}
-      </main>
-
-      {/* Toast 通知 */}
+      {/* Toast 通知（兼容旧系统） */}
       <ToastContainer messages={messages} onClose={closeToast} />
-    </>
+    </Flex>
   )
 }
 
