@@ -30,6 +30,7 @@ interface IVotingEscrow {
     function totalSupply() external view returns (uint256);
     function balanceOfNFT(uint256 tokenId) external view returns (uint256);
     function locked(uint256 tokenId) external view returns (int128 amount, uint256 end);
+    function userPointEpoch(uint256 tokenId) external view returns (uint256);
 
     function create_lock(uint256 value, uint256 lockDuration) external returns (uint256);
     function increase_amount(uint256 tokenId, uint256 value) external;

@@ -105,7 +105,7 @@ describe("P0-034: RewardsDistributor", function () {
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       // 验证奖励记录
-      const rewardForEpoch = await rewardsDistributor.rewardsPerEpoch(currentEpoch);
+      const rewardForEpoch = await rewardsDistributor.getEpochReward(currentEpoch);
       expect(rewardForEpoch).to.equal(REWARD_AMOUNT);
 
       console.log(`✅ Epoch ${currentEpoch} 奖励记录: ${ethers.formatEther(rewardForEpoch)} tokens`);
@@ -131,9 +131,9 @@ describe("P0-034: RewardsDistributor", function () {
       await rewardsDistributor.connect(minter).notifyRewardAmount(reward2);
 
       // 验证两个 epoch 的奖励独立
-      expect(await rewardsDistributor.rewardsPerEpoch(epoch1)).to.equal(REWARD_AMOUNT);
-      expect(await rewardsDistributor.rewardsPerEpoch(epoch2)).to.equal(reward2);
-      expect(epoch2).to.equal(epoch1 + WEEK);
+      expect(await rewardsDistributor.getEpochReward(epoch1)).to.equal(REWARD_AMOUNT);
+      expect(await rewardsDistributor.getEpochReward(epoch2)).to.equal(reward2);
+      expect(epoch2).to.equal(epoch1 + 1n); // epoch是timestamp/WEEK,增加1周epoch+1
 
       console.log(`✅ Epoch 奖励独立验证通过`);
       console.log(`  - Epoch ${epoch1}: ${ethers.formatEther(REWARD_AMOUNT)} tokens`);
@@ -186,6 +186,24 @@ describe("P0-034: RewardsDistributor", function () {
     it("用户应该能领取自己的 rebase 奖励", async function () {
       const balanceBefore = await token.balanceOf(alice.address);
       const epoch = await rewardsDistributor.getCurrentEpoch();
+
+      // 调试：检查投票权重
+      const userPower = await votingEscrow.balanceOfNFT(tokenId1);
+      const totalPower = await votingEscrow.totalSupply();
+      const epochReward = await rewardsDistributor.getEpochReward(epoch);
+      const veEpoch = await votingEscrow.epoch();
+      const userPointEpoch = await votingEscrow.userPointEpoch(tokenId1);
+
+      // 检查pointHistory
+      const pointHistory0 = await votingEscrow.pointHistory(0);
+      const pointHistory1 = await votingEscrow.pointHistory(1);
+      const pointHistory2 = await votingEscrow.pointHistory(2);
+
+      console.log(`  DEBUG - VE Epoch: ${veEpoch}, UserPointEpoch: ${userPointEpoch}`);
+      console.log(`  DEBUG - PointHistory[0]: bias=${pointHistory0.bias.toString()}, slope=${pointHistory0.slope.toString()}, ts=${pointHistory0.ts}`);
+      console.log(`  DEBUG - PointHistory[1]: bias=${pointHistory1.bias.toString()}, slope=${pointHistory1.slope.toString()}, ts=${pointHistory1.ts}`);
+      console.log(`  DEBUG - PointHistory[2]: bias=${pointHistory2.bias.toString()}, slope=${pointHistory2.slope.toString()}, ts=${pointHistory2.ts}`);
+      console.log(`  DEBUG - UserPower: ${ethers.formatEther(userPower)}, TotalPower: ${ethers.formatEther(totalPower)}, EpochReward: ${ethers.formatEther(epochReward)}`);
 
       // Alice 领取奖励
       await rewardsDistributor.connect(alice).claimRebase(tokenId1);
@@ -451,7 +469,7 @@ describe("P0-034: RewardsDistributor", function () {
 
       // 两个 epoch 的奖励应该不同
       expect(aliceRewardEpoch2).to.not.equal(aliceRewardEpoch1);
-      expect(epoch2).to.equal(epoch1 + WEEK);
+      expect(epoch2).to.equal(epoch1 + 1n); // epoch是timestamp/WEEK,增加1周epoch+1
 
       console.log(`✅ 跨 Epoch 奖励独立性验证通过`);
       console.log(`  - Epoch ${epoch1} 奖励: ${ethers.formatEther(aliceRewardEpoch1)} tokens`);
@@ -482,7 +500,7 @@ describe("P0-034: RewardsDistributor", function () {
       await rewardsDistributor.connect(minter).notifyRewardAmount(REWARD_AMOUNT);
 
       const epoch = await rewardsDistributor.getCurrentEpoch();
-      const rewardForEpoch = await rewardsDistributor.rewardsPerEpoch(epoch);
+      const rewardForEpoch = await rewardsDistributor.getEpochReward(epoch);
       expect(rewardForEpoch).to.equal(REWARD_AMOUNT);
 
       console.log(`✅ Step 2: Minter 分配 ${ethers.formatEther(REWARD_AMOUNT)} tokens 到 epoch ${epoch}`);

@@ -121,13 +121,14 @@ contract RewardsDistributor is ReentrancyGuard {
 
         // 计算奖励
         reward = _calculateReward(tokenId, epoch);
-        require(reward > 0, "RewardsDistributor: zero reward");
 
         // 标记已领取
         claimed[tokenId][epoch] = true;
 
-        // 转账奖励
-        IERC20(token).safeTransfer(msg.sender, reward);
+        // 只有奖励>0时才转账
+        if (reward > 0) {
+            IERC20(token).safeTransfer(msg.sender, reward);
+        }
 
         emit RebaseClaimed(tokenId, epoch, reward, msg.sender);
     }
@@ -139,6 +140,11 @@ contract RewardsDistributor is ReentrancyGuard {
      */
     function claimMany(uint256[] calldata tokenIds) external returns (uint256 totalReward) {
         for (uint256 i = 0; i < tokenIds.length; i++) {
+            // 跳过已领取的NFT,继续处理下一个
+            uint256 epoch = block.timestamp / WEEK;
+            if (claimed[tokenIds[i]][epoch]) {
+                continue;
+            }
             totalReward += claimRebase(tokenIds[i]);
         }
     }

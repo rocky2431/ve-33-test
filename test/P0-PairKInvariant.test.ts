@@ -230,8 +230,9 @@ describe("P0-004: Pair K-Invariant Verification", function () {
     });
 
     it("稳定币池 swap 应该保持 k-值不变或增加", async function () {
-      // 获取 swap 前的储备量
+      // 获取 swap 前的储备量和token地址
       const [reserve0Before, reserve1Before] = await stablePair.getReserves();
+      const [pairToken0, pairToken1] = await stablePair.tokens();
 
       // 用户执行 swap
       const swapAmount = ethers.parseEther("100");
@@ -255,11 +256,18 @@ describe("P0-004: Pair K-Invariant Verification", function () {
       // 获取 swap 后的储备量
       const [reserve0After, reserve1After] = await stablePair.getReserves();
 
-      // 稳定币池的 k-值计算: x³y + y³x
-      // 验证 k 值增加(由于手续费)
-      // 注意: 这里简化验证,实际的 k-值计算在合约内部
-      expect(reserve0After).to.be.gt(reserve0Before);
-      expect(reserve1After).to.be.lt(reserve1Before);
+      // ✅ P0-004: 验证swap正确性,考虑token地址可能被排序
+      // 确定哪个reserve对应token0
+      const token0Address = await token0.getAddress();
+      if (pairToken0.toLowerCase() === token0Address.toLowerCase()) {
+        // Pair中的token0就是测试中的token0
+        expect(reserve0After).to.be.gt(reserve0Before); // token0增加
+        expect(reserve1After).to.be.lt(reserve1Before); // token1减少
+      } else {
+        // Pair中的token0是测试中的token1（地址被排序了）
+        expect(reserve0After).to.be.lt(reserve0Before); // token1减少
+        expect(reserve1After).to.be.gt(reserve1Before); // token0增加
+      }
     });
 
     it("稳定币池在1:1附近应该有更低的滑点", async function () {

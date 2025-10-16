@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IVotingEscrow.sol";
 
 /**
@@ -9,7 +10,7 @@ import "../interfaces/IVotingEscrow.sol";
  * @notice 代币铸造合约 - 管理每周代币增发和分发
  * @dev 实现反稀释机制,为锁仓者提供代币补偿
  */
-contract Minter {
+contract Minter is Ownable {
     /// @notice 治理代币
     address public immutable token;
 
@@ -49,7 +50,7 @@ contract Minter {
 
     event Mint(address indexed sender, uint256 weekly, uint256 circulatingSupply, uint256 forVe, uint256 forGauges);
 
-    constructor(address _token, address _ve) {
+    constructor(address _token, address _ve) Ownable(msg.sender) {
         token = _token;
         ve = _ve;
     }
@@ -65,10 +66,9 @@ contract Minter {
 
     /**
      * @notice 设置 RewardsDistributor 合约
-     * @dev 只能设置一次
+     * @dev 只能设置一次，只有owner可以调用
      */
-    function setRewardsDistributor(address _rewardsDistributor) external {
-        require(msg.sender == token, "Minter: not token");
+    function setRewardsDistributor(address _rewardsDistributor) external onlyOwner {
         require(rewardsDistributor == address(0), "Minter: already set");
         require(_rewardsDistributor != address(0), "Minter: zero address");
         rewardsDistributor = _rewardsDistributor;
@@ -76,9 +76,9 @@ contract Minter {
 
     /**
      * @notice 开始铸造
+     * @dev 只有owner可以调用
      */
-    function start() external {
-        require(msg.sender == token, "Minter: not token");
+    function start() external onlyOwner {
         require(activePeriod == 0, "Minter: already started");
         activePeriod = block.timestamp / WEEK * WEEK;
     }
@@ -167,7 +167,7 @@ contract Minter {
 
             // ✅ 分配给LP提供者 (通过 Voter)
             if (voter != address(0) && _forGauges > 0) {
-                IERC20(token).approve(voter, _forGauges);
+                IERC20(token).transfer(voter, _forGauges);
                 IVoter(voter).distributeAll();
             }
 

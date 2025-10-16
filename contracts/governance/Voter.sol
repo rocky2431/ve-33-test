@@ -62,6 +62,9 @@ contract Voter is ReentrancyGuard {
     /// @notice NFT 创建区块号 (用于Flash Loan防护)
     mapping(uint256 => uint256) public nftCreationBlock;
 
+    /// @notice NFT 首次记录时间戳 (用于最小持有期检查)
+    mapping(uint256 => uint256) public nftFirstSeen;
+
     /// @notice 总投票权重
     uint256 public totalWeight;
 
@@ -142,27 +145,42 @@ contract Voter is ReentrancyGuard {
         require(_poolVote.length <= 10, "Voter: too many pools");
 
         // ✅ P0-024: Flash Loan 攻击防护
-        // 1. 防止同区块创建和投票
+        // 1. 首次遇到NFT时,从VotingEscrow获取创建信息
         if (nftCreationBlock[_tokenId] == 0) {
-            // 首次投票,记录创建区块号(使用当前区块作为近似)
-            nftCreationBlock[_tokenId] = block.number - 1;
+            // 查询NFT的epoch,确保NFT存在
+            uint256 userEpoch = IVotingEscrow(ve).userPointEpoch(_tokenId);
+            require(userEpoch > 0, "Voter: NFT not found");
+
+            // 由于无法直接获取Point struct,我们使用低级调用
+            // userPointHistory(tokenId, idx) 返回 (bias, slope, ts, blk)
+            (bool success, bytes memory data) = ve.staticcall(
+                abi.encodeWithSignature("userPointHistory(uint256,uint256)", _tokenId, 0)
+            );
+            require(success, "Voter: failed to get point history");
+
+            // 解析返回的Point结构: (int128 bias, int128 slope, uint256 ts, uint256 blk)
+            (, , uint256 ts, uint256 blk) = abi.decode(data, (int128, int128, uint256, uint256));
+            nftCreationBlock[_tokenId] = blk;
+            nftFirstSeen[_tokenId] = ts;
         }
+
+        // 2. 防止同区块创建和投票
         require(
             block.number > nftCreationBlock[_tokenId],
             "Voter: cannot vote in creation block"
         );
 
-        // 2. 检查最小持有期 (1天)
+        // 3. 检查最小持有期和投票冷却期
         if (lastVoted[_tokenId] > 0) {
+            // 已投票过,检查是否过了1周
             require(
                 block.timestamp >= lastVoted[_tokenId] + 1 weeks,
                 "Voter: already voted this week"
             );
         } else {
-            // 首次投票需要至少持有1天
-            (, uint256 lockEnd) = IVotingEscrow(ve).locked(_tokenId);
+            // 首次投票,检查最小持有期(从NFT创建时间开始)
             require(
-                block.timestamp >= lockEnd - 365 days + MIN_HOLDING_PERIOD,
+                block.timestamp >= nftFirstSeen[_tokenId] + MIN_HOLDING_PERIOD,
                 "Voter: minimum holding period not met"
             );
         }

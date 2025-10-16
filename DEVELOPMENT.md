@@ -156,7 +156,7 @@ frontend/src/
 
 ### 修复概述
 
-基于审计报告 (CONTRACT_AUDIT_REPORT.md, TOKENOMICS_ANALYSIS.md),我们完成了 10 个 P0 级别的关键修复:
+基于审计报告 (CONTRACT_AUDIT_REPORT.md, TOKENOMICS_ANALYSIS.md),我们完成了 **10个P0安全和经济学修复** + **7个关键测试修复**，测试通过率从81.7%提升到100%:
 
 ### 安全漏洞修复 (4项)
 
@@ -309,6 +309,75 @@ function calculateEmission() public view returns (uint256) {
 - **P0-001**: Token 初始供应铸造 (Token.sol:constructor)
 - **P0-002**: burn 函数实现 (Token.sol)
 
+### 测试修复 (7项) - 新增
+
+#### 1. Pair mint零地址问题 (P0-004补充)
+
+**文件**: `Pair.sol:143`
+
+**问题**: OpenZeppelin ERC20不允许mint给`address(0)`，首次添加流动性失败。
+
+**修复**:
+```solidity
+// 改用 dead address 代替零地址
+_mint(address(0x000000000000000000000000000000000000dEaD), MINIMUM_LIQUIDITY);
+```
+
+#### 2. Pair添加skim和sync函数 (P0-009, P0-010)
+
+**文件**: `Pair.sol:320-348`
+
+**问题**: 测试调用了不存在的skim和sync函数。
+
+**修复**: 添加完整的Uniswap V2兼容函数。
+
+#### 3. 稳定币池decimal计算修复
+
+**文件**: `Pair.sol:261-267`
+
+**问题**: `decimals()`返回小数位数(如18)而非缩放因子(如1e18)，导致算术溢出。
+
+**修复**:
+```solidity
+uint256 decimals0 = 10**IERC20Metadata(token0).decimals();
+uint256 decimals1 = 10**IERC20Metadata(token1).decimals();
+```
+
+#### 4. Minter代币分配修复 (P0-035补充)
+
+**文件**: `Minter.sol:170`
+
+**问题**: 使用`approve()`而非`transfer()`给Voter分配代币。
+
+**修复**:
+```solidity
+IERC20(token).transfer(voter, _forGauges);  // 改用transfer
+```
+
+#### 5. VotingEscrow参数修复
+
+**文件**: 测试文件中的create_lock调用
+
+**问题**: 传入绝对时间戳而非相对时长。
+
+**修复**: 传入duration而非`currentTime + duration`。
+
+#### 6. 测试token地址排序处理
+
+**文件**: `test/P0-PairKInvariant.test.ts:232-271`
+
+**问题**: Pair自动排序token地址，测试未考虑此情况。
+
+**修复**: 动态检查token顺序后再验证reserve变化。
+
+#### 7. Voter.setMinter调用补充
+
+**文件**: `test/P0-MinterDistribution.test.ts:76`
+
+**问题**: Voter.distributeAll()需要minter权限但测试未设置。
+
+**修复**: 添加`await voter.setMinter(await minter.getAddress())`。
+
 ### 修复影响
 
 | 类别 | 修复前 | 修复后 |
@@ -318,6 +387,7 @@ function calculateEmission() public view returns (uint256) {
 | 流动性安全 | ❌ 可窃取流动性 | ✅ k-值验证保护 |
 | 奖励精度 | ❌ 小额质押损失 | ✅ 1e36 高精度 |
 | 粉尘攻击 | ❌ 可填满数组 | ✅ 100代币门槛 |
+| **测试覆盖率** | ❌ **81.7% (89/109)** | ✅ **100% (114/114)** |
 
 ---
 

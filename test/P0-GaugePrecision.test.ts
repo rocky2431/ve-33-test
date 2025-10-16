@@ -68,12 +68,20 @@ describe("P0-042: Gauge Precision Fix", function () {
     );
     await gauge.waitForDeployment();
 
-    // 分配代币 (Token初始供应20M,分配不要超过这个量)
-    const largeAmount = ethers.parseEther("5000000"); // 500万 (留够给3个用户)
-    await stakingToken.transfer(alice.address, largeAmount);
-    await stakingToken.transfer(bob.address, largeAmount);
-    await stakingToken.transfer(carol.address, largeAmount);
-    await rewardToken.transfer(await gauge.getAddress(), REWARD_AMOUNT * 10n);
+    // 分配代币 - 需要支持极端测试场景
+    // Token初始供应20M,但测试需要更大的量(1万亿质押)
+    // 设置owner为minter并mint更多代币
+    await stakingToken.setMinter(owner.address);
+    await rewardToken.setMinter(owner.address);
+
+    const hugeAmount = ethers.parseEther("2000000000000"); // 2万亿
+    await stakingToken.mint(alice.address, hugeAmount);
+    await stakingToken.transfer(bob.address, ethers.parseEther("5000000"));
+    await stakingToken.transfer(carol.address, ethers.parseEther("5000000"));
+
+    // 奖励代币也需要更多(10亿奖励)
+    const hugeReward = ethers.parseEther("2000000000"); // 20亿
+    await rewardToken.mint(await gauge.getAddress(), hugeReward);
   });
 
   describe("PRECISION 常量验证", function () {

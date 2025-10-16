@@ -73,6 +73,10 @@ describe("P0-047: Bribe Dust Attack Protection", function () {
       await token.transfer(attacker.address, ethers.parseEther("1000000"));
       await token.transfer(user.address, ethers.parseEther("1000000"));
     }
+
+    // 给用户转账主代币(用于创建ve-NFT)
+    await mainToken.transfer(user.address, ethers.parseEther("100000"));
+    await mainToken.transfer(attacker.address, ethers.parseEther("100000"));
   });
 
   describe("MIN_BRIBE_AMOUNT 常量验证", function () {

@@ -73,23 +73,17 @@ describe("P0-Minter: Multiple Fixes", function () {
 
     // 设置关联
     await minter.setVoter(await voter.getAddress());
+    await voter.setMinter(await minter.getAddress());  // ✅ 添加：设置 Voter 的 minter
     await token.setMinter(await minter.getAddress());
 
-    // 设置 RewardsDistributor (需要用token合约调用)
-    const tokenAddress = await token.getAddress();
-    await ethers.provider.send("hardhat_impersonateAccount", [tokenAddress]);
-    const tokenSigner = await ethers.getSigner(tokenAddress);
+    // 设置 RewardsDistributor 的 minter
+    await rewardsDistributor.setMinter(await minter.getAddress());
 
-    // 给 token 合约地址转些 ETH 用于 gas
-    await owner.sendTransaction({
-      to: tokenAddress,
-      value: ethers.parseEther("1")
-    });
+    // 设置 Minter 的 RewardsDistributor (owner调用)
+    await minter.setRewardsDistributor(await rewardsDistributor.getAddress());
 
-    await minter.connect(tokenSigner).setRewardsDistributor(await rewardsDistributor.getAddress());
-    await minter.connect(tokenSigner).start();
-
-    await ethers.provider.send("hardhat_stopImpersonatingAccount", [tokenAddress]);
+    // 启动 Minter (owner调用)
+    await minter.start();
   });
 
   describe("P0-035: 30/70 排放分配", function () {
@@ -304,10 +298,9 @@ describe("P0-Minter: Multiple Fixes", function () {
 
       // 用户创建大额锁仓
       await token.connect(user).approve(await votingEscrow.getAddress(), ethers.parseEther("10000000"));
-      const currentTime = await time.latest();
       await votingEscrow.connect(user).create_lock(
         ethers.parseEther("10000000"),
-        currentTime + 4 * 365 * 86400 // 4年
+        4 * 365 * 86400 // 4年锁定期
       );
 
       const circulating = await minter.circulatingSupply();
@@ -333,10 +326,9 @@ describe("P0-Minter: Multiple Fixes", function () {
       // 创建锁仓
       await token.transfer(user.address, ethers.parseEther("1000000"));
       await token.connect(user).approve(await votingEscrow.getAddress(), ethers.parseEther("1000000"));
-      const currentTime = await time.latest();
       await votingEscrow.connect(user).create_lock(
         ethers.parseEther("1000000"),
-        currentTime + 365 * 86400
+        365 * 86400 // 1年锁定期
       );
 
       const circulatingAfter = await minter.circulatingSupply();
@@ -482,14 +474,37 @@ describe("P0-Minter: Multiple Fixes", function () {
     });
 
     it("未设置 RewardsDistributor 时仍应该正常运行", async function () {
+      // 部署新的 Token (因为原 token 已经设置了 minter)
+      const TokenFactory = await ethers.getContractFactory("Token");
+      const newToken = await TokenFactory.deploy("Solidly2", "SOLID2");
+      await newToken.waitForDeployment();
+
+      // 部署新的 VotingEscrow
+      const VotingEscrowFactory = await ethers.getContractFactory("VotingEscrow");
+      const newVotingEscrow = await VotingEscrowFactory.deploy(await newToken.getAddress());
+      await newVotingEscrow.waitForDeployment();
+
+      // 部署新的 Voter
+      const VoterFactory = await ethers.getContractFactory("Voter");
+      const newVoter = await VoterFactory.deploy(
+        await newVotingEscrow.getAddress(),
+        await factory.getAddress(),
+        await newToken.getAddress()
+      );
+      await newVoter.waitForDeployment();
+
       // 部署新的 Minter
       const MinterFactory = await ethers.getContractFactory("Minter");
       const newMinter = await MinterFactory.deploy(
-        await token.getAddress(),
-        await votingEscrow.getAddress()
+        await newToken.getAddress(),
+        await newVotingEscrow.getAddress()
       );
+      await newMinter.waitForDeployment();
 
-      await newMinter.setVoter(await voter.getAddress());
+      // 设置关联
+      await newMinter.setVoter(await newVoter.getAddress());
+      await newVoter.setMinter(await newMinter.getAddress());
+      await newToken.setMinter(await newMinter.getAddress());
       await newMinter.start();
 
       await time.increase(WEEK);
