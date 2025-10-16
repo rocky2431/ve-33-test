@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import './App.css'
 import { SwapCard } from './components/Swap/SwapCard'
+import { Vote } from './components/Vote'
+import { Rewards } from './components/Rewards'
 import { useTokenBalance } from './hooks/useTokenBalance'
 import { TOKENS } from './constants/tokens'
 import { formatTokenAmount } from './utils/format'
 
-type Page = 'swap' | 'liquidity' | 'info'
+type Page = 'swap' | 'liquidity' | 'vote' | 'rewards' | 'info'
 
 function App() {
   const { address, isConnected } = useAccount()
@@ -68,9 +70,10 @@ function App() {
               display: 'flex',
               gap: '12px',
               marginBottom: '20px',
+              flexWrap: 'wrap',
             }}
           >
-            {(['swap', 'liquidity', 'info'] as const).map((page) => (
+            {(['swap', 'liquidity', 'vote', 'rewards', 'info'] as const).map((page) => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
@@ -92,6 +95,10 @@ function App() {
                   ? 'Swap'
                   : page === 'liquidity'
                   ? '流动性'
+                  : page === 'vote'
+                  ? '投票'
+                  : page === 'rewards'
+                  ? '奖励'
                   : '信息'}
               </button>
             ))}
@@ -148,6 +155,10 @@ function App() {
               <p style={{ color: '#888' }}>即将推出...</p>
             </div>
           )}
+
+          {currentPage === 'vote' && <Vote />}
+
+          {currentPage === 'rewards' && <Rewards />}
 
           {currentPage === 'info' && (
             <div

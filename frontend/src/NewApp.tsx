@@ -8,6 +8,8 @@ import { SwapCard } from './components/Swap/SwapCard'
 import { LiquidityPage } from './components/Liquidity'
 import { CreateLock } from './components/Lock/CreateLock'
 import { MyVeNFTs } from './components/Lock/MyVeNFTs'
+import { Vote } from './components/Vote'
+import { Rewards } from './components/Rewards'
 import { Tabs, type Tab, useToast, ToastContainer } from './components/common'
 import './App.css'
 
@@ -68,43 +70,15 @@ function AppContent() {
 
       case 'vote':
         return (
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div
-              style={{
-                padding: '40px',
-                textAlign: 'center',
-                backgroundColor: '#1a1a1a',
-                borderRadius: '16px',
-                border: '1px solid #333',
-              }}
-            >
-              <h2 style={{ fontSize: '24px', marginBottom: '12px' }}>投票功能</h2>
-              <p style={{ color: '#888' }}>即将推出...</p>
-              <p style={{ color: '#666', fontSize: '14px', marginTop: '16px' }}>
-                使用 ve-NFT 投票决定每周激励分配
-              </p>
-            </div>
+          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <Vote />
           </div>
         )
 
       case 'rewards':
         return (
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div
-              style={{
-                padding: '40px',
-                textAlign: 'center',
-                backgroundColor: '#1a1a1a',
-                borderRadius: '16px',
-                border: '1px solid #333',
-              }}
-            >
-              <h2 style={{ fontSize: '24px', marginBottom: '12px' }}>奖励功能</h2>
-              <p style={{ color: '#888' }}>即将推出...</p>
-              <p style={{ color: '#666', fontSize: '14px', marginTop: '16px' }}>
-                领取交易手续费、贿赂奖励和代币增发
-              </p>
-            </div>
+          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <Rewards />
           </div>
         )
 
