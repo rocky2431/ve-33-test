@@ -12,7 +12,7 @@ if (!projectId) {
 const metadata = {
   name: 've(3,3) DEX',
   description: 'Vote-Escrowed Decentralized Exchange on BSC',
-  url: 'https://localhost:3000',
+  url: 'http://localhost:3001',
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 }
 

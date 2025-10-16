@@ -48,7 +48,7 @@ export function useTokenApprove(tokenAddress?: Address, spenderAddress?: Address
    * 检查是否已授权足够额度
    */
   const isApproved = (requiredAmount: bigint): boolean => {
-    if (!allowance) return false
+    if (!allowance || typeof allowance !== 'bigint') return false
     return allowance >= requiredAmount
   }
 

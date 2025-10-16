@@ -1,5 +1,8 @@
 import type { Token } from '../types'
 
+// 重新导出 Token 类型
+export type { Token }
+
 // BSC Testnet Token 列表
 export const TOKENS: Record<string, Token> = {
   SOLID: {

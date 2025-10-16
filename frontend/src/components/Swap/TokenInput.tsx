@@ -51,11 +51,11 @@ export function TokenInput({
         }}
       >
         <span>{label}</span>
-        {balance !== undefined && token && (
+        {balance !== undefined && token ? (
           <span>
             余额: {formatTokenAmount(balance, token.decimals)} {token.symbol}
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* 输入框和 Token 选择器 */}
@@ -91,7 +91,7 @@ export function TokenInput({
         />
 
         {/* MAX 按钮 */}
-        {balance && balance > 0n && !readOnly && (
+        {(balance !== undefined && balance > 0n && !readOnly) ? (
           <button
             onClick={handleMaxClick}
             style={{
@@ -107,7 +107,7 @@ export function TokenInput({
           >
             MAX
           </button>
-        )}
+        ) : null}
 
         {/* Token 选择按钮 */}
         <button

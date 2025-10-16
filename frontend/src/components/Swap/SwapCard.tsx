@@ -20,7 +20,7 @@ export function SwapCard() {
 
   // 输入金额
   const [amountIn, setAmountIn] = useState('')
-  const [slippage, setSlippage] = useState(0.5) // 0.5% 默认滑点
+  const [slippage] = useState(0.5) // 0.5% 默认滑点
 
   // Token 余额
   const { balance: balanceIn, refetch: refetchBalanceIn } = useTokenBalance(
@@ -42,7 +42,7 @@ export function SwapCard() {
 
   // 查询输出金额
   const amountInBigInt = parseTokenAmount(amountIn, tokenIn?.decimals)
-  const { amountOut, isLoading: isQuoting } = useSwapQuote(
+  const { amountOut } = useSwapQuote(
     amountInBigInt > 0n ? amountInBigInt : undefined,
     routes.length > 0 ? routes : undefined
   )
@@ -139,7 +139,7 @@ export function SwapCard() {
         onChange={setAmountIn}
         token={tokenIn}
         onSelectToken={setTokenIn}
-        balance={balanceIn}
+        balance={balanceIn !== undefined ? balanceIn : undefined}
       />
 
       {/* 交换按钮 */}

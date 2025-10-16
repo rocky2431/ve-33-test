@@ -1,5 +1,4 @@
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
-import type { Address } from 'viem'
 import RouterABI from '../abis/Router.json'
 import type { Route, SwapParams } from '../types'
 import { contracts } from '../config/web3'
