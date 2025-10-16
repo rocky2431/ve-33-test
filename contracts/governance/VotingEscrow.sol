@@ -194,7 +194,11 @@ contract VotingEscrow is IVotingEscrow, ERC721Enumerable, ReentrancyGuard {
         uint256 supplyBefore = supply;
         supply += _value;
 
-        LockedBalance memory oldLocked = _locked;
+        // 显式复制每个字段以避免引用问题
+        LockedBalance memory oldLocked;
+        oldLocked.amount = _locked.amount;
+        oldLocked.end = _locked.end;
+
         _locked.amount += int128(int256(_value));
 
         if (unlockTime != 0) {
@@ -252,24 +256,30 @@ contract VotingEscrow is IVotingEscrow, ERC721Enumerable, ReentrancyGuard {
             }
         }
 
-        Point memory lastPoint = Point({bias: 0, slope: 0, ts: block.timestamp, blk: block.number});
-        if (_epoch > 0) {
-            lastPoint = pointHistory[_epoch];
+        // 获取上一个点
+        // epoch表示已完成的checkpoint次数
+        // pointHistory[epoch]恰好是上一次checkpoint的结果（或初始点）
+        Point memory lastPoint = pointHistory[_epoch];
+
+        // 计算新的slope和bias
+        int128 newSlope = lastPoint.slope + (uNew.slope - uOld.slope);
+        int128 newBias = lastPoint.bias + (uNew.bias - uOld.bias);
+
+        if (newSlope < 0) {
+            newSlope = 0;
+        }
+        if (newBias < 0) {
+            newBias = 0;
         }
 
-        // 更新全局点
-        lastPoint.slope += (uNew.slope - uOld.slope);
-        lastPoint.bias += (uNew.bias - uOld.bias);
-        if (lastPoint.slope < 0) {
-            lastPoint.slope = 0;
-        }
-        if (lastPoint.bias < 0) {
-            lastPoint.bias = 0;
-        }
-
-        // 记录全局点
+        // 创建新的Point并记录到pointHistory
         epoch = _epoch + 1;
-        pointHistory.push(lastPoint);
+        pointHistory.push(Point({
+            bias: newBias,
+            slope: newSlope,
+            ts: block.timestamp,
+            blk: block.number
+        }));
 
         // 更新斜率变化
         if (oldLocked.end > block.timestamp) {
@@ -342,7 +352,7 @@ contract VotingEscrow is IVotingEscrow, ERC721Enumerable, ReentrancyGuard {
             return 0;
         }
 
-        Point memory lastPoint = pointHistory[_epoch - 1];
+        Point memory lastPoint = pointHistory[pointHistory.length - 1];
         return _supplyAt(lastPoint, block.timestamp);
     }
 
@@ -355,7 +365,7 @@ contract VotingEscrow is IVotingEscrow, ERC721Enumerable, ReentrancyGuard {
             return 0;
         }
 
-        Point memory lastPoint = pointHistory[_epoch - 1];
+        Point memory lastPoint = pointHistory[pointHistory.length - 1];
         return _supplyAt(lastPoint, _t);
     }
 

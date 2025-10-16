@@ -102,19 +102,68 @@ export function useAllGauges() {
 /**
  * 查询用户的投票历史
  */
-export function useUserVotes(tokenId?: bigint, poolAddress?: Address) {
-  // 查询用户对某个池的投票权重
-  const { data: poolVote } = useReadContract({
+export function useUserVotes(address?: Address) {
+  // 查询用户上次投票时间
+  const { data: lastVoted } = useReadContract({
     address: contracts.voter,
     abi: VoterABI,
-    functionName: 'votes',
-    args: tokenId !== undefined && poolAddress ? [tokenId, poolAddress] : undefined,
+    functionName: 'lastVoted',
+    args: address ? [address] : undefined,
     query: {
-      enabled: tokenId !== undefined && !!poolAddress,
+      enabled: !!address,
     },
   })
 
   return {
-    poolVote: poolVote as bigint | undefined,
+    lastVoted: lastVoted as bigint | undefined,
+    votes: [], // TODO: 实现完整的投票记录查询
+  }
+}
+
+/**
+ * 查询投票状态
+ */
+export function useVoteState(_address?: Address) {
+  // 查询用户总投票权重
+  const { data: totalWeight } = useReadContract({
+    address: contracts.voter,
+    abi: VoterABI,
+    functionName: 'totalWeight',
+    query: {
+      enabled: true,
+    },
+  })
+
+  return {
+    totalWeight: totalWeight as bigint | undefined,
+  }
+}
+
+/**
+ * 投票权重操作
+ */
+export function useVoteWeights() {
+  const { data: hash, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+
+  // 投票 (简化版本,接受地址数组和权重数组)
+  const vote = async (poolAddresses: Address[], weights: number[]) => {
+    // 将百分比权重转换为 bigint
+    const weightsBigInt = weights.map((w) => BigInt(w))
+
+    return writeContract({
+      address: contracts.voter,
+      abi: VoterABI,
+      functionName: 'vote',
+      args: [poolAddresses, weightsBigInt],
+    })
+  }
+
+  return {
+    vote,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error,
   }
 }

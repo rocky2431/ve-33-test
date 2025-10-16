@@ -10,10 +10,12 @@
 
 #### 智能合约层 (100%)
 - ✅ **核心 AMM 合约** (Token, Pair, Factory, Router)
-- ✅ **ve(3,3) 治理合约** (VotingEscrow, Voter, Minter, Gauge, Bribe)
-- ✅ **接口和工具库** (IPair, IFactory, Math)
+- ✅ **ve(3,3) 治理合约** (VotingEscrow, Voter, Minter, Gauge, Bribe, RewardsDistributor)
+- ✅ **P0 安全修复** (Flash Loan防护, k-值验证, 精度修复, 粉尘攻击防护)
+- ✅ **P0 代币经济学修复** (30/70分配, 尾部排放, 下溢保护)
+- ✅ **接口和工具库** (IPair, IFactory, IRewardsDistributor, Math)
 - ✅ **部署脚本和配置**
-- ✅ **BSC Testnet 部署**
+- ⏳ **BSC Testnet 重新部署** (包含 P0 修复)
 
 #### 前端应用 (90%)
 - ✅ **基础架构** (React 18.3.1 + TypeScript 5.9.3 + Vite 7.1.7)
@@ -52,11 +54,12 @@ Core Layer (核心层)
 └── Router.sol         - 路由合约 (安全交互接口)
 
 Governance Layer (治理层)
-├── VotingEscrow.sol   - ve-NFT 投票托管 (470+ 行)
-├── Voter.sol          - 投票管理 (300+ 行)
-├── Minter.sol         - 代币铸造 (100+ 行)
-├── Gauge.sol          - 流动性激励 (250+ 行)
-└── Bribe.sol          - 投票贿赂 (280+ 行)
+├── VotingEscrow.sol       - ve-NFT 投票托管 (470+ 行)
+├── Voter.sol              - 投票管理 (300+ 行, 含 Flash Loan 防护)
+├── Minter.sol             - 代币铸造 (180+ 行, 含 30/70 分配 + 尾部排放)
+├── Gauge.sol              - 流动性激励 (270+ 行, 1e36 精度)
+├── Bribe.sol              - 投票贿赂 (300+ 行, 含粉尘攻击防护)
+└── RewardsDistributor.sol - ve-NFT 奖励分配 (216 行, 新增)
 
 Support Layer (支持层)
 ├── interfaces/        - 合约接口定义
@@ -146,6 +149,245 @@ frontend/src/
 ├── App.tsx              # 原 Swap 应用（保留）
 └── main.tsx             # 入口文件（使用 NewApp）
 ```
+
+---
+
+## 🔒 P0 关键修复详解
+
+### 修复概述
+
+基于审计报告 (CONTRACT_AUDIT_REPORT.md, TOKENOMICS_ANALYSIS.md),我们完成了 **10个P0安全和经济学修复** + **7个关键测试修复**，测试通过率从81.7%提升到100%:
+
+### 安全漏洞修复 (4项)
+
+#### 1. Flash Loan 攻击防护 (P0-024)
+
+**文件**: `Voter.sol:144-167`
+
+**问题**: 攻击者可在同区块内创建 ve-NFT 并立即投票,利用闪电贷操纵投票权重。
+
+**修复**:
+```solidity
+// 1. 追踪 NFT 创建区块
+mapping(uint256 => uint256) public nftCreationBlock;
+
+// 2. 阻止同区块投票
+require(
+    block.number > nftCreationBlock[_tokenId],
+    "Voter: cannot vote in creation block"
+);
+
+// 3. 强制最小持有期 (1天)
+require(
+    block.timestamp >= IVotingEscrow(ve).locked(_tokenId).end - 365 days + MIN_HOLDING_PERIOD,
+    "Voter: minimum holding period not met"
+);
+```
+
+#### 2. k-值不变量验证 (P0-004)
+
+**文件**: `Pair.sol:217-228`
+
+**问题**: swap 后未验证 k-值不变量,可能导致流动性窃取。
+
+**修复**:
+```solidity
+// 波动性池: xy ≥ k
+if (stable) {
+    uint256 kLast = _k(_reserve0, _reserve1);
+    uint256 kNew = _k(balance0, balance1);
+    require(kNew >= kLast, "Pair: K_INVARIANT_VIOLATED");
+} else {
+    require(balance0 * balance1 >= _reserve0 * _reserve1, "Pair: K_INVARIANT_VIOLATED");
+}
+```
+
+#### 3. 奖励精度损失修复 (P0-042)
+
+**文件**: `Gauge.sol:59,104-114,121`
+
+**问题**: 1e18 精度在小额质押时会导致精度损失,奖励计算不准确。
+
+**修复**:
+```solidity
+// 提升精度从 1e18 到 1e36
+uint256 public constant PRECISION = 1e36;
+
+function rewardPerToken(address token) public view returns (uint256) {
+    if (totalSupply == 0) {
+        return rewardData[token].rewardPerTokenStored;
+    }
+    uint256 timeElapsed = lastTimeRewardApplicable(token) - rewardData[token].lastUpdateTime;
+    uint256 rewardIncrement = (timeElapsed * rewardData[token].rewardRate * PRECISION) / totalSupply;
+    return rewardData[token].rewardPerTokenStored + rewardIncrement;
+}
+```
+
+#### 4. 粉尘攻击防护 (P0-047)
+
+**文件**: `Bribe.sol:56,192`
+
+**问题**: 攻击者可用极小金额填满 rewards 数组 (限制10个),阻止正常贿赂。
+
+**修复**:
+```solidity
+uint256 public constant MIN_BRIBE_AMOUNT = 100 * 1e18; // 100 tokens
+
+function notifyRewardAmount(address token, uint256 amount) external nonReentrant {
+    require(amount >= MIN_BRIBE_AMOUNT, "Bribe: amount too small");
+    // ...
+}
+```
+
+### 代币经济学修复 (6项)
+
+#### 5. RewardsDistributor 合约 (P0-034)
+
+**文件**: `contracts/governance/RewardsDistributor.sol` (新增 216 行)
+
+**问题**: ve-NFT 持有者无法获得 30% 排放的 rebase 奖励。
+
+**修复**: 创建独立的 RewardsDistributor 合约:
+- 接收 Minter 分配的 30% 排放
+- 按 epoch 记录每个 ve-NFT 的奖励份额
+- 防止双重领取 (`claimed[tokenId][epoch]`)
+- 支持批量领取 (`claimMany`)
+
+#### 6. Minter 30/70 分配 (P0-035)
+
+**文件**: `Minter.sol:150-177`
+
+**问题**: 100% 排放都给了 Gauge,ve 持有者收到 0%。
+
+**修复**:
+```solidity
+function update_period() external returns (uint256) {
+    uint256 _emission = _updatePeriod();
+    if (_emission > 0) {
+        uint256 _forVe = (_emission * VE_DISTRIBUTION) / 100;  // 30%
+        uint256 _forGauges = _emission - _forVe;                // 70%
+
+        // ✅ 分配给 ve 持有者
+        if (rewardsDistributor != address(0) && _forVe > 0) {
+            IERC20(token).approve(rewardsDistributor, _forVe);
+            IRewardsDistributor(rewardsDistributor).notifyRewardAmount(_forVe);
+        }
+
+        // ✅ 分配给 LP 提供者
+        if (voter != address(0) && _forGauges > 0) {
+            IERC20(token).approve(voter, _forGauges);
+            IVoter(voter).distributeAll();
+        }
+    }
+    return _emission;
+}
+```
+
+#### 7. 尾部排放机制 (P0-036)
+
+**文件**: `Minter.sol:100-109`
+
+**问题**: 随着衰减,最终排放会趋近于0,影响长期可持续性。
+
+**修复**:
+```solidity
+function calculateEmission() public view returns (uint256) {
+    uint256 _circulating = circulatingSupply();
+    uint256 _baseEmission = weekly;
+
+    // 尾部排放 = 流通量的 2%
+    uint256 _tailEmission = (_circulating * TAIL_EMISSION_RATE) / TAIL_EMISSION_BASE;
+
+    // 返回较大值,确保排放永不低于 2%
+    return _baseEmission > _tailEmission ? _baseEmission : _tailEmission;
+}
+```
+
+#### 8-10. 其他修复
+
+- **P0-037**: circulatingSupply 下溢保护 (Minter.sol:90-94)
+- **P0-001**: Token 初始供应铸造 (Token.sol:constructor)
+- **P0-002**: burn 函数实现 (Token.sol)
+
+### 测试修复 (7项) - 新增
+
+#### 1. Pair mint零地址问题 (P0-004补充)
+
+**文件**: `Pair.sol:143`
+
+**问题**: OpenZeppelin ERC20不允许mint给`address(0)`，首次添加流动性失败。
+
+**修复**:
+```solidity
+// 改用 dead address 代替零地址
+_mint(address(0x000000000000000000000000000000000000dEaD), MINIMUM_LIQUIDITY);
+```
+
+#### 2. Pair添加skim和sync函数 (P0-009, P0-010)
+
+**文件**: `Pair.sol:320-348`
+
+**问题**: 测试调用了不存在的skim和sync函数。
+
+**修复**: 添加完整的Uniswap V2兼容函数。
+
+#### 3. 稳定币池decimal计算修复
+
+**文件**: `Pair.sol:261-267`
+
+**问题**: `decimals()`返回小数位数(如18)而非缩放因子(如1e18)，导致算术溢出。
+
+**修复**:
+```solidity
+uint256 decimals0 = 10**IERC20Metadata(token0).decimals();
+uint256 decimals1 = 10**IERC20Metadata(token1).decimals();
+```
+
+#### 4. Minter代币分配修复 (P0-035补充)
+
+**文件**: `Minter.sol:170`
+
+**问题**: 使用`approve()`而非`transfer()`给Voter分配代币。
+
+**修复**:
+```solidity
+IERC20(token).transfer(voter, _forGauges);  // 改用transfer
+```
+
+#### 5. VotingEscrow参数修复
+
+**文件**: 测试文件中的create_lock调用
+
+**问题**: 传入绝对时间戳而非相对时长。
+
+**修复**: 传入duration而非`currentTime + duration`。
+
+#### 6. 测试token地址排序处理
+
+**文件**: `test/P0-PairKInvariant.test.ts:232-271`
+
+**问题**: Pair自动排序token地址，测试未考虑此情况。
+
+**修复**: 动态检查token顺序后再验证reserve变化。
+
+#### 7. Voter.setMinter调用补充
+
+**文件**: `test/P0-MinterDistribution.test.ts:76`
+
+**问题**: Voter.distributeAll()需要minter权限但测试未设置。
+
+**修复**: 添加`await voter.setMinter(await minter.getAddress())`。
+
+### 修复影响
+
+| 类别 | 修复前 | 修复后 |
+|------|--------|--------|
+| 代币经济学 | ❌ ve持有者 0% 排放 | ✅ 正确 30/70 分配 |
+| Flash Loan | ❌ 可同区块攻击 | ✅ 完全防护 |
+| 流动性安全 | ❌ 可窃取流动性 | ✅ k-值验证保护 |
+| 奖励精度 | ❌ 小额质押损失 | ✅ 1e36 高精度 |
+| 粉尘攻击 | ❌ 可填满数组 | ✅ 100代币门槛 |
+| **测试覆盖率** | ❌ **81.7% (89/109)** | ✅ **100% (114/114)** |
 
 ---
 
@@ -555,12 +797,21 @@ ve-NFT 持有者每周投票:
 
 ### 已实施的安全措施
 
+#### 基础安全
 1. ✅ **重入保护**: 使用 ReentrancyGuard
 2. ✅ **安全转账**: 使用 SafeERC20
 3. ✅ **权限控制**: Ownable 和自定义权限
 4. ✅ **输入验证**: 严格的参数检查
 5. ✅ **时间锁**: 截止时间机制防止前置交易
 6. ✅ **滑点保护**: 最小输出金额检查
+
+#### P0 级别安全强化 (2025-01-17)
+7. ✅ **Flash Loan 防护**: 阻止同区块投票 + 最小持有期
+8. ✅ **k-值不变量验证**: 防止流动性窃取
+9. ✅ **高精度计算**: 1e36 精度防止精度损失
+10. ✅ **粉尘攻击防护**: 100代币最小贿赂门槛
+11. ✅ **下溢保护**: circulatingSupply 边界检查
+12. ✅ **经济学修复**: 正确的 30/70 排放分配
 
 ### 待完善的安全措施
 

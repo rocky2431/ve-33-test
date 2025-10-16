@@ -34,6 +34,9 @@
 | **VotingEscrow** | `0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6` | [查看](https://testnet.bscscan.com/address/0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6) |
 | **Voter** | `0x28EE028C9D26c59f2C7E9CBE16B89366933d0792` | [查看](https://testnet.bscscan.com/address/0x28EE028C9D26c59f2C7E9CBE16B89366933d0792) |
 | **Minter** | `0x41E31C21151F7e8E509754a197463a8E234E136E` | [查看](https://testnet.bscscan.com/address/0x41E31C21151F7e8E509754a197463a8E234E136E) |
+| **RewardsDistributor** | `待部署` | ve-NFT 持有者奖励分配 |
+
+> **⚠️ 重要更新**: RewardsDistributor 是新增合约,用于向 ve-NFT 持有者分配 30% 的代币排放。需要重新部署。
 
 ---
 
@@ -101,6 +104,7 @@ VITE_CONTRACT_WETH=0xF8ef391F45ce84b25Dc0194bDD97daD5E04cd3bC
 VITE_CONTRACT_VOTING_ESCROW=0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6
 VITE_CONTRACT_VOTER=0x28EE028C9D26c59f2C7E9CBE16B89366933d0792
 VITE_CONTRACT_MINTER=0x41E31C21151F7e8E509754a197463a8E234E136E
+VITE_CONTRACT_REWARDS_DISTRIBUTOR=待部署后填写
 ```
 
 ---
@@ -203,8 +207,46 @@ npx hardhat verify --network bscTestnet 0x5c34D24c0c1457F2d744505259F9aba5CFAed6
 npx hardhat verify --network bscTestnet 0x28EE028C9D26c59f2C7E9CBE16B89366933d0792 0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6 0x739d450F9780e7f6c33263a51Bd53B83F18CfD53 0x2CfAd237410F5bdC9eEA98C79e8391e1AffEE231
 
 # Minter
-npx hardhat verify --network bscTestnet 0x41E31C21151F7e8E509754a197463a8E234E136E 0x28EE028C9D26c59f2C7E9CBE16B89366933d0792 0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6 0x2CfAd237410F5bdC9eEA98C79e8391e1AffEE231
+npx hardhat verify --network bscTestnet 0x41E31C21151F7e8E509754a197463a8E234E136E 0x2CfAd237410F5bdC9eEA98C79e8391e1AffEE231 0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6
+
+# RewardsDistributor (新增合约)
+npx hardhat verify --network bscTestnet <REWARDS_DISTRIBUTOR_ADDRESS> 0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6 0x2CfAd237410F5bdC9eEA98C79e8391e1AffEE231
 ```
+
+> **📝 注意**: RewardsDistributor 构造函数参数为 `(votingEscrow, token)`
+
+---
+
+## 🔒 P0 安全修复说明
+
+在重新部署前,请注意以下关键修复已实施:
+
+### 代币经济学修复
+1. **✅ RewardsDistributor**: 新增合约,正确实现 ve-NFT 持有者 30% 排放分配
+2. **✅ Minter 30/70 分配**: 修复了原先 ve 持有者收到 0% 的问题
+3. **✅ 尾部排放机制**: 确保长期可持续性 (2% 地板)
+4. **✅ circulatingSupply 下溢保护**: 防止算术错误
+
+### 安全漏洞修复
+1. **✅ Flash Loan 攻击防护** (Voter.sol:144-167)
+   - 阻止同区块创建NFT和投票
+   - 强制执行最小持有期 (1天)
+
+2. **✅ k-值不变量验证** (Pair.sol:217-228)
+   - 防止流动性窃取攻击
+   - 确保 swap 后 k ≥ k_old
+
+3. **✅ 精度损失修复** (Gauge.sol)
+   - 将精度从 1e18 提升至 1e36
+   - 防止小额质押时的精度损失
+
+4. **✅ 粉尘攻击防护** (Bribe.sol)
+   - 最小贿赂金额设为 100 代币
+
+### 部署注意事项
+- 需要重新部署所有修改的合约
+- 部署顺序: Token → VotingEscrow → **RewardsDistributor** → Voter → Minter
+- 需要调用 `minter.setRewardsDistributor()` 进行关联
 
 ---
 

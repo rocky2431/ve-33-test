@@ -51,6 +51,10 @@ contract Bribe is ReentrancyGuard {
     /// @notice 奖励持续时间 (7 天)
     uint256 public constant DURATION = 7 days;
 
+    /// @notice 最小贿赂金额 (防止粉尘攻击)
+    /// @dev P0-047: 防止攻击者用极小金额填满rewards数组
+    uint256 public constant MIN_BRIBE_AMOUNT = 100 * 1e18; // 100 tokens
+
     /// @notice 检查点数据 (记录用户投票历史)
     struct Checkpoint {
         uint256 timestamp;
@@ -182,9 +186,10 @@ contract Bribe is ReentrancyGuard {
      * @notice 通知奖励数量
      * @param token 奖励代币地址
      * @param amount 奖励数量
+     * @dev P0-047: 添加最小贿赂金额检查,防止粉尘攻击
      */
     function notifyRewardAmount(address token, uint256 amount) external nonReentrant {
-        require(amount > 0, "Bribe: zero amount");
+        require(amount >= MIN_BRIBE_AMOUNT, "Bribe: amount too small");
 
         // 转入代币
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);

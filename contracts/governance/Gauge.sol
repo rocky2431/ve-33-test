@@ -54,6 +54,13 @@ contract Gauge is ReentrancyGuard {
     /// @notice 奖励持续时间 (7 天)
     uint256 public constant DURATION = 7 days;
 
+    /// @notice 精度常量 (用于高精度奖励计算)
+    /// @dev P0-042: 使用更高精度(1e36)避免小额质押时的精度损失
+    uint256 public constant PRECISION = 1e36;
+
+    /// @notice 最小奖励金额
+    uint256 public constant MIN_REWARD_AMOUNT = 1e18;
+
     /// @notice Fees 合约地址
     address public fees;
 
@@ -92,21 +99,26 @@ contract Gauge is ReentrancyGuard {
 
     /**
      * @notice 计算每个代币的奖励
+     * @dev P0-042: 使用更高精度(1e36)避免小额质押时精度损失
      */
     function rewardPerToken(address token) public view returns (uint256) {
         if (totalSupply == 0) {
             return rewardData[token].rewardPerTokenStored;
         }
-        return rewardData[token].rewardPerTokenStored +
-            ((lastTimeRewardApplicable(token) - rewardData[token].lastUpdateTime) *
-                rewardData[token].rewardRate * 1e18) / totalSupply;
+
+        // 使用更高精度计算
+        uint256 timeElapsed = lastTimeRewardApplicable(token) - rewardData[token].lastUpdateTime;
+        uint256 rewardIncrement = (timeElapsed * rewardData[token].rewardRate * PRECISION) / totalSupply;
+
+        return rewardData[token].rewardPerTokenStored + rewardIncrement;
     }
 
     /**
      * @notice 计算用户可领取的奖励
+     * @dev 使用PRECISION匹配rewardPerToken的精度
      */
     function earned(address token, address account) public view returns (uint256) {
-        return (balanceOf[account] * (rewardPerToken(token) - userRewardPerTokenPaid[token][account])) / 1e18 +
+        return (balanceOf[account] * (rewardPerToken(token) - userRewardPerTokenPaid[token][account])) / PRECISION +
             rewards_for[token][account];
     }
 
@@ -212,9 +224,10 @@ contract Gauge is ReentrancyGuard {
      * @notice 通知奖励数量 (由 Voter 或 Bribe 调用)
      * @param token 奖励代币地址
      * @param reward 奖励数量
+     * @dev P0-042: 添加最小奖励金额检查
      */
     function notifyRewardAmount(address token, uint256 reward) external nonReentrant {
-        require(reward > 0, "Gauge: zero reward");
+        require(reward >= MIN_REWARD_AMOUNT, "Gauge: reward too small");
 
         // 添加新的奖励代币
         if (!isReward[token]) {
