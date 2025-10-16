@@ -138,7 +138,9 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
         uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
             liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
-            _mint(address(0), MINIMUM_LIQUIDITY);
+            // ✅ P0-004: Mint minimum liquidity to dead address instead of zero address
+            // OpenZeppelin ERC20 doesn't allow minting to zero address
+            _mint(address(0x000000000000000000000000000000000000dEaD), MINIMUM_LIQUIDITY);
         } else {
             liquidity = Math.min(
                 (amount0 * _totalSupply) / _reserve0,
@@ -214,6 +216,19 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
         uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
         require(amount0In > 0 || amount1In > 0, "Pair: INSUFFICIENT_INPUT_AMOUNT");
 
+        // ✅ P0-004: 验证 k 值不变性 (防止流动性被盗)
+        // 对于稳定币对,使用 x³y + y³x >= k
+        // 对于波动性对,使用 xy >= k
+        if (stable) {
+            uint256 kLast = _k(_reserve0, _reserve1);
+            uint256 kNew = _k(balance0, balance1);
+            require(kNew >= kLast, "Pair: K_INVARIANT_VIOLATED");
+        } else {
+            // 对于波动性对,使用简单的 xy >= k 验证
+            // 考虑手续费后,k 值应该增加或保持不变
+            require(balance0 * balance1 >= _reserve0 * _reserve1, "Pair: K_INVARIANT_VIOLATED");
+        }
+
         _update(balance0, balance1);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
@@ -242,14 +257,17 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
     ) internal view returns (uint256) {
         if (stable) {
             uint256 xy = _k(_reserve0, _reserve1);
-            _reserve0 = (_reserve0 * 1e18) / IERC20Metadata(token0).decimals();
-            _reserve1 = (_reserve1 * 1e18) / IERC20Metadata(token1).decimals();
+            // ✅ P0-004: Fix decimal scaling - decimals() returns the number of decimals, not the scaling factor
+            uint256 decimals0 = 10**IERC20Metadata(token0).decimals();
+            uint256 decimals1 = 10**IERC20Metadata(token1).decimals();
+            _reserve0 = (_reserve0 * 1e18) / decimals0;
+            _reserve1 = (_reserve1 * 1e18) / decimals1;
 
             (uint256 reserveA, uint256 reserveB) = tokenIn == token0 ? (_reserve0, _reserve1) : (_reserve1, _reserve0);
-            amountIn = tokenIn == token0 ? (amountIn * 1e18) / IERC20Metadata(token0).decimals() : (amountIn * 1e18) / IERC20Metadata(token1).decimals();
+            amountIn = tokenIn == token0 ? (amountIn * 1e18) / decimals0 : (amountIn * 1e18) / decimals1;
 
             uint256 y = reserveB - _get_y(amountIn + reserveA, xy, reserveB);
-            return (y * (tokenIn == token0 ? IERC20Metadata(token1).decimals() : IERC20Metadata(token0).decimals())) / 1e18;
+            return (y * (tokenIn == token0 ? decimals1 : decimals0)) / 1e18;
         } else {
             (uint256 reserveA, uint256 reserveB) = tokenIn == token0 ? (_reserve0, _reserve1) : (_reserve1, _reserve0);
             return (amountIn * reserveB) / (reserveA + amountIn);
@@ -300,6 +318,36 @@ contract Pair is IPair, ERC20, ReentrancyGuard {
 
     function _d(uint256 x0, uint256 y) internal pure returns (uint256) {
         return (3 * x0 * ((y * y) / 1e18)) / 1e18 + ((((x0 * x0) / 1e18) * x0) / 1e18);
+    }
+
+    /**
+     * @notice 强制储备量与实际余额同步
+     * @dev ✅ P0-004: 防止通过 sync 操纵价格
+     */
+    function sync() external nonReentrant {
+        uint256 balance0 = IERC20(token0).balanceOf(address(this)) - claimable0;
+        uint256 balance1 = IERC20(token1).balanceOf(address(this)) - claimable1;
+        _update(balance0, balance1);
+    }
+
+    /**
+     * @notice 将超出储备量的代币转出
+     * @param to 接收地址
+     * @dev ✅ P0-004: 防止通过 skim 窃取流动性
+     */
+    function skim(address to) external nonReentrant {
+        address _token0 = token0;
+        address _token1 = token1;
+
+        uint256 balance0 = IERC20(_token0).balanceOf(address(this)) - claimable0;
+        uint256 balance1 = IERC20(_token1).balanceOf(address(this)) - claimable1;
+
+        if (balance0 > reserve0) {
+            IERC20(_token0).safeTransfer(to, balance0 - reserve0);
+        }
+        if (balance1 > reserve1) {
+            IERC20(_token1).safeTransfer(to, balance1 - reserve1);
+        }
     }
 
     /**

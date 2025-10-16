@@ -20,11 +20,15 @@ contract Token is ERC20, Ownable {
      * @notice 构造函数
      * @param _name 代币名称
      * @param _symbol 代币符号
+     * @dev 铸造初始供应 20,000,000 代币给部署者
      */
     constructor(
         string memory _name,
         string memory _symbol
-    ) ERC20(_name, _symbol) Ownable(msg.sender) {}
+    ) ERC20(_name, _symbol) Ownable(msg.sender) {
+        // 铸造初始供应 20M SOLID 代币
+        _mint(msg.sender, 20_000_000 * 1e18);
+    }
 
     /**
      * @notice 设置铸币者
@@ -45,5 +49,14 @@ contract Token is ERC20, Ownable {
     function mint(address account, uint256 amount) external {
         require(msg.sender == minter, "Token: not minter");
         _mint(account, amount);
+    }
+
+    /**
+     * @notice 销毁代币
+     * @param amount 销毁数量
+     * @dev 调用者销毁自己的代币
+     */
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
     }
 }
