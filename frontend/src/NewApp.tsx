@@ -12,7 +12,8 @@ import { CreateLock } from './components/Lock/CreateLock'
 import { MyVeNFTs } from './components/Lock/MyVeNFTs'
 import { Vote } from './components/Vote'
 import { Rewards } from './components/Rewards'
-import { Tabs, type Tab, useToast, ToastContainer } from './components/common'
+import { Tabs, type Tab, useToast, ToastContainer, LanguageSwitcher, ThemeToggle } from './components/common'
+import { useTranslation } from 'react-i18next'
 import './App.css'
 
 // 定义 Page 类型
@@ -31,6 +32,7 @@ createWeb3Modal({
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
   const { messages, closeToast } = useToast()
+  const { t } = useTranslation()
 
   const handlePageChange = (page: Page) => {
     setCurrentPage(page)
@@ -126,7 +128,7 @@ function AppContent() {
             ve(3,3) DEX
           </h1>
 
-          <nav style={{ display: 'flex', gap: '12px' }}>
+          <nav style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             {(['dashboard', 'swap', 'liquidity', 'lock', 'vote', 'rewards'] as Page[]).map((page) => (
               <button
                 key={page}
@@ -144,12 +146,16 @@ function AppContent() {
                   textTransform: 'capitalize',
                 }}
               >
-                {page === 'dashboard' ? '仪表盘' : page === 'swap' ? 'Swap' : page === 'liquidity' ? '流动性' : page === 'lock' ? '锁仓' : page === 'vote' ? '投票' : '奖励'}
+                {t(`nav.${page}`)}
               </button>
             ))}
           </nav>
 
-          <w3m-button />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <ThemeToggle />
+            <LanguageSwitcher />
+            <w3m-button />
+          </div>
         </div>
       </header>
 
