@@ -1,243 +1,342 @@
 # ve(3,3) DEX - 去中心化交易所
 
-基于 Solidly 的 ve(3,3) 机制实现的完整 DEX 交易所项目。
+基于 Solidly 的 ve(3,3) 机制实现的完整 DEX 项目，结合了 Curve 的 ve tokenomics 和 Olympus DAO 的 (3,3) 博弈论设计。
 
-## 项目概述
+<div align="center">
 
-这是一个完整的去中心化交易所(DEX)实现,采用 ve(3,3) 治理机制,结合了 Curve 的 ve tokenomics 和 Olympus DAO 的 (3,3) 博弈论设计。
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Solidity](https://img.shields.io/badge/solidity-0.8.20-green.svg)](https://soliditylang.org/)
+[![React](https://img.shields.io/badge/react-18.3.1-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.9.3-blue.svg)](https://www.typescriptlang.org/)
 
-### 核心特性
+[快速开始](#-快速开始) • [功能特性](#-核心特性) • [部署指南](DEPLOYMENT.md) • [开发文档](DEVELOPMENT.md)
 
-- ✅ **双曲线 AMM**: 支持波动性资产 (xy≥k) 和稳定币 (x³y+y³x≥k) 两种交易曲线
-- ✅ **ve(3,3) 治理**: NFT 形式的投票托管系统
-- 🔧 **流动性激励**: Gauge 和 Bribe 激励机制
-- 🔧 **手续费分配**: 手续费归投票者所有
-- 📊 **完整前端**: React + TypeScript 的现代化用户界面
+</div>
 
-## 项目结构
+---
 
-```
-ve33-dex/
-├── contracts/              # 智能合约
-│   ├── core/              # 核心合约
-│   │   ├── Token.sol     # 治理代币
-│   │   ├── Pair.sol      # AMM 交易对
-│   │   ├── Factory.sol   # 交易对工厂
-│   │   └── Router.sol    # 路由合约
-│   ├── governance/        # 治理合约
-│   │   ├── VotingEscrow.sol  # ve-NFT 投票托管
-│   │   ├── Voter.sol         # 投票管理
-│   │   ├── Gauge.sol         # 流动性激励
-│   │   ├── Bribe.sol         # 投票贿赂
-│   │   └── Minter.sol        # 代币铸造
-│   ├── interfaces/        # 合约接口
-│   └── libraries/         # 工具库
-├── frontend/              # 前端应用
-│   └── src/
-│       ├── components/    # React 组件
-│       ├── pages/         # 页面
-│       ├── hooks/         # 自定义 Hooks
-│       └── utils/         # 工具函数
-├── scripts/               # 部署脚本
-├── test/                  # 测试文件
-└── docs/                  # 文档
+## 📖 项目概述
 
-```
+这是一个完整的去中心化交易所(DEX)实现，采用创新的 ve(3,3) 治理机制：
 
-## 已完成功能
+- **ve (Vote Escrow)**: 来自 Curve，通过锁仓获得投票权
+- **(3,3) 博弈**: 来自 Olympus DAO，激励长期持有
+- **双曲线 AMM**: 支持波动性资产和稳定币两种交易曲线
 
-### ✅ 智能合约层
+---
 
-1. **核心 AMM 合约**
-   - [Token.sol](contracts/core/Token.sol) - 治理代币,支持铸造权限控制
-   - [Pair.sol](contracts/core/Pair.sol) - 交易对合约,实现双曲线 AMM
-     - 波动性资产: `xy >= k`
-     - 稳定币资产: `x³y + y³x >= k`
-     - 0.3% 交易手续费
-     - 手续费累计和领取机制
-   - [Factory.sol](contracts/core/Factory.sol) - 无需许可创建交易对
-   - [Router.sol](contracts/core/Router.sol) - 安全的用户交互接口
-     - 添加/移除流动性
-     - 代币交换
-     - 多跳路由
+## ✨ 核心特性
 
-2. **治理系统合约** (全部完成!)
-   - [VotingEscrow.sol](contracts/governance/VotingEscrow.sol) - ve-NFT 投票托管系统 (470+ 行)
-     - 锁仓获得 NFT 投票权
-     - 支持合并和分割 NFT
-     - 投票权重随时间衰减
-   - [Voter.sol](contracts/governance/Voter.sol) - 投票管理中心 (300+ 行)
-     - 创建和管理 Gauge
-     - 处理投票逻辑
-     - 分发激励
-   - [Gauge.sol](contracts/governance/Gauge.sol) - 流动性激励分发 (250+ 行)
-     - LP 质押和奖励
-     - 多种奖励代币支持
-   - [Bribe.sol](contracts/governance/Bribe.sol) - 投票贿赂系统 (280+ 行)
-     - 项目方贿赂机制
-     - 检查点记录
-   - [Minter.sol](contracts/governance/Minter.sol) - 代币铸造分发 (100+ 行)
-     - 每周自动增发
-     - 衰减机制 (每周 -1%)
+### 🔄 交易功能
+- ✅ **双曲线 AMM**: 波动性资产 (xy≥k) 和稳定币 (x³y+y³x≥k) 两种曲线
+- ✅ **Token 交换**: 完整的 Swap 功能，支持实时价格查询
+- ✅ **流动性管理**: 添加/移除流动性，获得 LP Token
+- ✅ **多跳路由**: 智能路由寻找最优交易路径
+- ✅ **滑点保护**: 可配置的滑点容忍度
 
-3. **接口和工具**
-   - IPair, IFactory, IRouter, IVotingEscrow, IERC20
-   - Math.sol - 数学运算库 (sqrt, cbrt, min, max)
+### 🗳️ 治理机制
+- ✅ **ve-NFT 系统**: 锁仓获得 NFT 形式的投票权
+- ✅ **投票决策**: 决定每周激励分配给哪些流动性池
+- ✅ **手续费分红**: 投票者获得对应池的交易手续费
+- ✅ **贿赂系统**: 项目方可贿赂投票者以吸引流动性
+- ✅ **反稀释机制**: 锁仓者获得代币增发补偿
 
-4. **前端应用** (基础完成)
-   - 完整的页面结构
-   - 精美的 UI 设计
-   - 响应式布局
+### 🎨 前端界面
+- ✅ **Web3 集成**: Web3Modal + wagmi v2 钱包连接
+- ✅ **实时更新**: 余额、价格自动刷新
+- ✅ **响应式设计**: 支持桌面和移动端
+- ✅ **现代化 UI**: 深色主题，流畅动画
 
-### 🔧 待完成
-
-- 完整的智能合约测试用例
-- Web3 前端集成
-- 测试网部署和验证
-
-## 技术栈
-
-### 智能合约
-- **Solidity** ^0.8.20
-- **Hardhat** - 开发框架
-- **OpenZeppelin** - 安全的合约库
-- **TypeScript** - 类型安全的脚本
-
-### 前端 (计划)
-- **React 18** + **TypeScript**
-- **Vite** - 快速构建工具
-- **ethers.js** / **wagmi** - Web3 集成
-- **TailwindCSS** + **shadcn/ui** - UI 框架
+---
 
 ## 🚀 快速开始
 
-### 方式一: 5分钟快速部署 (推荐)
+### 方式一：使用已部署的合约 (推荐)
 
-查看 **[快速启动指南](QUICK_START.md)** 快速部署到 BSC Testnet!
+我们已经在 BSC Testnet 部署了完整的合约！
 
-### 方式二: 完整部署流程
-
-#### 1. 检查项目状态
+**1. 启动前端应用**
 
 ```bash
-npm run check
+# 安装依赖
+cd frontend
+npm install
+
+# 启动开发服务器
+npm run dev
 ```
 
-这会检查:
+访问: http://localhost:3000/
 
-- ✅ 环境变量配置
-- ✅ 网络连接和账户余额
-- ✅ 合约编译状态
-- ✅ 部署记录
-- ✅ 前端配置
+**2. 连接钱包**
 
-#### 2. 安装依赖
+- 安装 MetaMask
+- 添加 BSC Testnet 网络
+- 从[水龙头](https://testnet.bnbchain.org/faucet-smart)获取测试 BNB
+- 开始交易！
+
+**📚 详细步骤**: 查看 [DEPLOYMENT.md](DEPLOYMENT.md)
+
+---
+
+### 方式二：从头部署
+
+**1. 安装依赖**
 
 ```bash
 npm install
+cd frontend && npm install && cd ..
 ```
 
-#### 3. 编译合约
+**2. 配置环境变量**
+
+```bash
+# 复制环境变量模板
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+
+# 编辑 .env 文件，填入你的配置
+```
+
+**3. 编译合约**
 
 ```bash
 npm run compile
 ```
 
-#### 4. 部署到 BSC Testnet
+**4. 部署到 BSC Testnet**
 
 ```bash
 npm run deploy:bsc
 ```
 
-查看 **[部署检查清单](DEPLOYMENT_CHECKLIST.md)** 了解详细步骤。
-
-#### 5. 启动前端
+**5. 启动前端**
 
 ```bash
 npm run frontend:dev
 ```
 
-### 本地开发
+**📚 详细教程**: 查看 [DEPLOYMENT.md](DEPLOYMENT.md)
 
-```bash
-# 启动本地节点
-npm run node
+---
 
-# 部署合约到本地网络
-npm run deploy:local
+## 📦 已部署的合约
+
+### BSC Testnet
+
+| 合约 | 地址 | 说明 |
+|------|------|------|
+| SOLID Token | `0x2CfAd237410F5bdC9eEA98C79e8391e1AffEE231` | 治理代币 |
+| Factory | `0x739d450F9780e7f6c33263a51Bd53B83F18CfD53` | 交易对工厂 |
+| Router | `0xaf796B4Df784cc7B40F1e999B668779143B63f52` | 路由合约 |
+| WBNB | `0xF8ef391F45ce84b25Dc0194bDD97daD5E04cd3bC` | 包装 BNB |
+| VotingEscrow | `0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6` | ve-NFT 投票托管 |
+| Voter | `0x28EE028C9D26c59f2C7E9CBE16B89366933d0792` | 投票管理 |
+| Minter | `0x41E31C21151F7e8E509754a197463a8E234E136E` | 代币铸造 |
+
+**网络信息:**
+- Chain ID: 97
+- RPC: https://data-seed-prebsc-1-s1.binance.org:8545/
+- 浏览器: https://testnet.bscscan.com/
+
+---
+
+## 🏗️ 项目结构
+
+```
+ve33-dex/
+├── contracts/              # 智能合约
+│   ├── core/              # 核心 AMM 层
+│   │   ├── Token.sol      # 治理代币
+│   │   ├── Pair.sol       # AMM 交易对
+│   │   ├── Factory.sol    # 交易对工厂
+│   │   └── Router.sol     # 路由合约
+│   ├── governance/        # 治理层
+│   │   ├── VotingEscrow.sol  # ve-NFT 投票托管
+│   │   ├── Voter.sol         # 投票管理
+│   │   ├── Minter.sol        # 代币铸造
+│   │   ├── Gauge.sol         # 流动性激励
+│   │   └── Bribe.sol         # 投票贿赂
+│   ├── interfaces/        # 合约接口
+│   └── libraries/         # 工具库
+│
+├── frontend/              # 前端应用
+│   └── src/
+│       ├── components/    # React 组件
+│       ├── hooks/         # 自定义 Hooks
+│       ├── abis/          # 合约 ABI
+│       ├── types/         # TypeScript 类型
+│       ├── utils/         # 工具函数
+│       └── config/        # 配置文件
+│
+├── scripts/               # 部署脚本
+├── test/                  # 测试文件
+├── DEPLOYMENT.md          # 📘 部署指南
+├── DEVELOPMENT.md         # 📙 开发文档
+└── README.md             # 📗 项目概述
 ```
 
-### 运行测试
+---
 
-```bash
-npm run test
-```
+## 🛠️ 技术栈
 
-## 合约架构
+### 智能合约
+- **Solidity** ^0.8.20 - 智能合约语言
+- **Hardhat** - 开发框架
+- **OpenZeppelin** - 安全的合约库
+- **TypeScript** - 类型安全的脚本
 
-### ve(3,3) 工作机制
+### 前端应用
+- **React 18** - UI 框架
+- **TypeScript** - 类型安全
+- **Vite** - 快速构建工具
+- **wagmi v2** - Web3 React Hooks
+- **viem** - 以太坊交互库
+- **Web3Modal** - 钱包连接
+- **TailwindCSS** - UI 样式
 
-1. **锁仓获得投票权**
-   - 用户锁定治理代币获得 ve-NFT
-   - 锁定时间越长,投票权重越大
-   - NFT 形式,可转移和交易
+---
 
-2. **投票决定激励分配**
-   - ve-NFT 持有者投票决定每周激励分配
-   - 投票给不同的流动性池
-   - 获得该池的手续费和贿赂奖励
+## 📊 ve(3,3) 工作机制
 
-3. **反稀释机制**
-   - 锁仓者获得 0-100% 的代币增发补偿
-   - 防止代币贬值(类似 OlympusDAO 的 (3,3))
+### 1️⃣ 锁仓获得投票权
 
-4. **手续费和贿赂**
-   - 交易手续费归投票给该池的 ve 持有者
-   - 项目方可以"贿赂"投票者以吸引流动性
+用户锁定 SOLID 代币，获得 ve-NFT：
+- 锁定时间: 1 周 - 4 年
+- 锁定越久，投票权重越大
+- NFT 形式，可转移和交易
 
-## 开发原则
+### 2️⃣ 投票决定激励分配
 
-本项目严格遵循软件工程最佳实践:
+ve-NFT 持有者每周投票：
+- 投票给不同的流动性池
+- 决定每周激励的分配比例
+- 获得投票池的手续费收益
 
-- **KISS (Keep It Simple)**: 使用成熟的 Solidly 架构,避免过度设计
-- **DRY (Don't Repeat Yourself)**: 复用 OpenZeppelin 和已验证的代码
-- **SOLID**: 模块化设计,清晰的职责划分
-- **YAGNI (You Aren't Gonna Need It)**: 先实现核心功能,避免过早优化
+### 3️⃣ 反稀释机制
 
-## 安全考虑
+锁仓者获得增发补偿：
+- 锁仓者：获得 0-100% 的代币增发
+- 未锁仓者：承受稀释
+- 类似 OlympusDAO 的 (3,3) 博弈
 
+### 4️⃣ 贿赂和手续费
+
+投票者的收益来源：
+- **交易手续费**: 投票池的 0.3% 手续费
+- **贿赂奖励**: 项目方存入的贿赂代币
+- **激励排放**: 每周的代币增发
+
+---
+
+## 📚 文档导航
+
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - 完整的部署教程
+  - 环境准备与配置
+  - 部署步骤详解
+  - 已部署合约地址
+  - 故障排除指南
+
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - 开发与测试文档
+  - 项目架构详解
+  - 智能合约开发
+  - 前端开发指南
+  - 测试流程与清单
+
+---
+
+## 🎯 开发原则
+
+本项目严格遵循软件工程最佳实践：
+
+- **KISS** (Keep It Simple): 使用成熟的 Solidly 架构
+- **DRY** (Don't Repeat Yourself): 复用 OpenZeppelin 和已验证的代码
+- **SOLID**: 模块化设计，清晰的职责划分
+- **YAGNI** (You Aren't Gonna Need It): 先实现核心功能
+
+---
+
+## 🔒 安全性
+
+### 已实施
 - ✅ 使用 OpenZeppelin 经过审计的合约库
 - ✅ ReentrancyGuard 防止重入攻击
 - ✅ SafeERC20 安全的代币转账
-- 🔧 即将进行全面的单元测试
-- 🔧 计划进行专业安全审计
+- ✅ 滑点保护和截止时间检查
 
-## 路线图
+### 计划中
+- ⏳ 100% 单元测试覆盖
+- ⏳ 专业安全审计
+- ⏳ Bug 赏金计划
+
+**⚠️ 警告**: 本项目仍在开发中，合约未经完整审计，请勿在生产环境使用真实资金。
+
+---
+
+## 🗺️ 路线图
 
 - [x] 项目初始化和配置
 - [x] 核心 AMM 合约实现
-- [x] 治理系统合约实现 (VotingEscrow, Voter, Gauge, Bribe, Minter)
-- [x] 前端基础界面开发
+- [x] ve(3,3) 治理合约实现
+- [x] BSC Testnet 部署
+- [x] 前端基础架构
+- [x] Swap 交易功能
+- [ ] 流动性管理界面
 - [ ] 完整的测试覆盖
-- [ ] Web3 前端集成
-- [ ] 测试网部署
+- [ ] ve(3,3) 治理界面
 - [ ] 安全审计
 - [ ] 主网部署
 
-## 参考资料
+---
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+```bash
+# 1. Fork 项目
+# 2. 创建功能分支
+git checkout -b feature/amazing-feature
+
+# 3. 提交更改
+git commit -m 'feat: add amazing feature'
+
+# 4. 推送到分支
+git push origin feature/amazing-feature
+
+# 5. 创建 Pull Request
+```
+
+**详细指南**: 查看 [DEVELOPMENT.md](DEVELOPMENT.md)
+
+---
+
+## 📖 参考资料
 
 - [Solidly 源码](https://github.com/velodrome-finance/solidly)
 - [ve(3,3) 白皮书](https://andrecronje.medium.com/ve-3-3-44466eaa088b)
 - [Curve ve Tokenomics](https://curve.fi/vecrv)
-
-## 许可证
-
-MIT License
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request!
+- [Uniswap V2 文档](https://docs.uniswap.org/contracts/v2/overview)
 
 ---
 
-**⚠️ 警告**: 本项目仍在开发中,请勿在生产环境使用。智能合约未经审计,可能存在安全风险。
+## 📄 许可证
+
+[MIT License](LICENSE)
+
+---
+
+## 📞 联系方式
+
+- GitHub Issues: [提交问题](https://github.com/your-repo/issues)
+- 文档: [DEPLOYMENT.md](DEPLOYMENT.md) | [DEVELOPMENT.md](DEVELOPMENT.md)
+
+---
+
+<div align="center">
+
+**🌟 如果这个项目对你有帮助，请给个 Star！🌟**
+
+Made with ❤️ by ve(3,3) DEX Team
+
+</div>
