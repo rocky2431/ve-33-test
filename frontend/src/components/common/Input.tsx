@@ -1,5 +1,20 @@
-import type { CSSProperties, InputHTMLAttributes } from 'react'
-import { colors, radius, spacing, fontSize, transition } from '../../constants/theme'
+/**
+ * Input 组件 - 基于 Chakra UI
+ * 功能完整的表单输入组件，支持 label、error、helper 和附加元素
+ */
+
+import {
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  FormHelperText,
+  Input as ChakraInput,
+  InputGroup,
+  InputLeftElement,
+  InputRightElement,
+  type InputProps as ChakraInputProps,
+} from '@chakra-ui/react'
+import type { ReactNode, InputHTMLAttributes } from 'react'
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string
@@ -7,8 +22,8 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
   helperText?: string
   fullWidth?: boolean
   size?: 'sm' | 'md' | 'lg'
-  leftElement?: React.ReactNode
-  rightElement?: React.ReactNode
+  leftElement?: ReactNode
+  rightElement?: ReactNode
 }
 
 export function Input({
@@ -19,107 +34,52 @@ export function Input({
   size = 'md',
   leftElement,
   rightElement,
-  style,
-  ...props
+  ...inputProps
 }: InputProps) {
-  const sizeStyles: Record<string, CSSProperties> = {
-    sm: { padding: '8px 12px', fontSize: fontSize.sm },
-    md: { padding: '12px 16px', fontSize: fontSize.md },
-    lg: { padding: '16px 20px', fontSize: fontSize.lg },
-  }
-
-  const inputStyle: CSSProperties = {
-    width: fullWidth ? '100%' : 'auto',
-    backgroundColor: colors.bgSecondary,
-    border: `1px solid ${error ? colors.error : colors.border}`,
-    borderRadius: radius.md,
-    color: colors.textPrimary,
-    outline: 'none',
-    transition: transition.normal,
-    fontFamily: 'inherit',
-    ...sizeStyles[size],
-    ...(leftElement && { paddingLeft: '48px' }),
-    ...(rightElement && { paddingRight: '48px' }),
-    ...style,
-  }
-
-  const containerStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: spacing.sm,
-    width: fullWidth ? '100%' : 'auto',
-  }
-
   return (
-    <div style={containerStyle}>
+    <FormControl isInvalid={!!error} w={fullWidth ? 'full' : 'auto'}>
       {label && (
-        <label
-          style={{
-            fontSize: fontSize.sm,
-            color: colors.textSecondary,
-            fontWeight: '500',
-          }}
-        >
+        <FormLabel fontSize="sm" color="gray.400" fontWeight="medium">
           {label}
-        </label>
+        </FormLabel>
       )}
 
-      <div style={{ position: 'relative', width: '100%' }}>
-        {leftElement && (
-          <div
-            style={{
-              position: 'absolute',
-              left: spacing.md,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-              color: colors.textTertiary,
-            }}
-          >
-            {leftElement}
-          </div>
-        )}
+      <InputGroup size={size}>
+        {leftElement && <InputLeftElement>{leftElement}</InputLeftElement>}
 
-        <input
-          style={inputStyle}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = error ? colors.error : colors.primary
-            e.currentTarget.style.boxShadow = `0 0 0 3px ${error ? colors.error : colors.primary}22`
+        <ChakraInput
+          bg="gray.800"
+          border="1px solid"
+          borderColor={error ? 'red.500' : 'gray.700'}
+          color="white"
+          borderRadius="lg"
+          _hover={{
+            borderColor: error ? 'red.400' : 'gray.600',
           }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = error ? colors.error : colors.border
-            e.currentTarget.style.boxShadow = 'none'
+          _focus={{
+            borderColor: error ? 'red.400' : 'brand.500',
+            boxShadow: error ? '0 0 0 1px var(--chakra-colors-red-400)' : '0 0 0 1px var(--chakra-colors-brand-500)',
           }}
-          {...props}
+          _placeholder={{
+            color: 'gray.500',
+          }}
+          {...(inputProps as ChakraInputProps)}
         />
 
-        {rightElement && (
-          <div
-            style={{
-              position: 'absolute',
-              right: spacing.md,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            {rightElement}
-          </div>
-        )}
-      </div>
+        {rightElement && <InputRightElement>{rightElement}</InputRightElement>}
+      </InputGroup>
 
-      {(error || helperText) && (
-        <span
-          style={{
-            fontSize: fontSize.xs,
-            color: error ? colors.error : colors.textTertiary,
-          }}
-        >
-          {error || helperText}
-        </span>
+      {error && (
+        <FormErrorMessage fontSize="xs" mt={1}>
+          {error}
+        </FormErrorMessage>
       )}
-    </div>
+
+      {!error && helperText && (
+        <FormHelperText fontSize="xs" color="gray.500" mt={1}>
+          {helperText}
+        </FormHelperText>
+      )}
+    </FormControl>
   )
 }

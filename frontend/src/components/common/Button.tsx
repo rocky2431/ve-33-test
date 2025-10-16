@@ -1,13 +1,35 @@
-import type { CSSProperties, ReactNode } from 'react'
+/**
+ * Button 组件 - 基于 Chakra UI
+ * 保持向后兼容的同时提供现代化的样式和功能
+ */
 
-interface ButtonProps {
+import { Button as ChakraButton, type ButtonProps as ChakraButtonProps } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
+import type { ReactNode } from 'react'
+
+interface ButtonProps extends Omit<ChakraButtonProps, 'variant'> {
   children: ReactNode
   onClick?: () => void
   disabled?: boolean
-  loading?: boolean
-  variant?: 'primary' | 'secondary' | 'outline'
-  fullWidth?: boolean
-  style?: CSSProperties
+  loading?: boolean // 保持兼容性，内部映射到 isLoading
+  variant?: 'primary' | 'secondary' | 'outline' // 自定义 variant
+  fullWidth?: boolean // 保持兼容性，内部映射到 isFullWidth
+}
+
+/**
+ * 将自定义 variant 映射到 Chakra UI 的 variant 和 colorScheme
+ */
+const getChakraVariant = (variant: ButtonProps['variant']) => {
+  switch (variant) {
+    case 'primary':
+      return { variant: 'solid', colorScheme: 'brand' }
+    case 'secondary':
+      return { variant: 'solid', colorScheme: 'gray' }
+    case 'outline':
+      return { variant: 'outline', colorScheme: 'brand' }
+    default:
+      return { variant: 'solid', colorScheme: 'brand' }
+  }
 }
 
 export function Button({
@@ -17,56 +39,31 @@ export function Button({
   loading,
   variant = 'primary',
   fullWidth,
-  style,
+  ...chakraProps
 }: ButtonProps) {
-  const baseStyle: CSSProperties = {
-    padding: '16px 32px',
-    fontSize: '16px',
-    fontWeight: '600',
-    border: 'none',
-    borderRadius: '12px',
-    cursor: disabled || loading ? 'not-allowed' : 'pointer',
-    transition: 'all 0.2s',
-    opacity: disabled || loading ? 0.5 : 1,
-    width: fullWidth ? '100%' : 'auto',
-  }
-
-  const variantStyles: Record<string, CSSProperties> = {
-    primary: {
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      color: '#fff',
-    },
-    secondary: {
-      backgroundColor: '#1a1a1a',
-      color: '#fff',
-      border: '1px solid #333',
-    },
-    outline: {
-      backgroundColor: 'transparent',
-      color: '#667eea',
-      border: '2px solid #667eea',
-    },
-  }
+  const { t } = useTranslation()
+  const { variant: chakraVariant, colorScheme } = getChakraVariant(variant)
 
   return (
-    <button
+    <ChakraButton
       onClick={onClick}
-      disabled={disabled || loading}
-      style={{ ...baseStyle, ...variantStyles[variant], ...style }}
-      onMouseOver={(e) => {
-        if (!disabled && !loading) {
-          e.currentTarget.style.transform = 'translateY(-2px)'
-          e.currentTarget.style.boxShadow = '0 8px 16px rgba(102, 126, 234, 0.3)'
-        }
+      isDisabled={disabled}
+      isLoading={loading}
+      loadingText={t('common.loading')}
+      variant={chakraVariant}
+      colorScheme={colorScheme}
+      width={fullWidth ? 'full' : 'auto'}
+      size="lg"
+      borderRadius="xl"
+      fontWeight="semibold"
+      transition="all 0.2s"
+      _hover={{
+        transform: disabled || loading ? 'none' : 'translateY(-2px)',
+        boxShadow: disabled || loading ? 'none' : 'lg',
       }}
-      onMouseOut={(e) => {
-        if (!disabled && !loading) {
-          e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = 'none'
-        }
-      }}
+      {...chakraProps}
     >
-      {loading ? '处理中...' : children}
-    </button>
+      {children}
+    </ChakraButton>
   )
 }

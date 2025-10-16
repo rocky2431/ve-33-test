@@ -1,59 +1,66 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { colors, radius, fontSize } from '../../constants/theme'
+/**
+ * Badge 组件 - 基于 Chakra UI
+ * 简洁的徽章组件，支持多种状态和尺寸
+ */
 
-interface BadgeProps {
+import { Badge as ChakraBadge, type BadgeProps as ChakraBadgeProps } from '@chakra-ui/react'
+import type { ReactNode } from 'react'
+
+interface BadgeProps extends Omit<ChakraBadgeProps, 'variant'> {
   children: ReactNode
   variant?: 'success' | 'error' | 'warning' | 'info' | 'default'
   size?: 'sm' | 'md' | 'lg'
 }
 
-export function Badge({ children, variant = 'default', size = 'md' }: BadgeProps) {
-  const variantColors: Record<string, { bg: string; text: string; border: string }> = {
-    success: {
-      bg: `${colors.success}22`,
-      text: colors.success,
-      border: colors.success,
-    },
-    error: {
-      bg: `${colors.error}22`,
-      text: colors.error,
-      border: colors.error,
-    },
-    warning: {
-      bg: `${colors.warning}22`,
-      text: colors.warning,
-      border: colors.warning,
-    },
-    info: {
-      bg: `${colors.info}22`,
-      text: colors.info,
-      border: colors.info,
-    },
-    default: {
-      bg: colors.bgTertiary,
-      text: colors.textSecondary,
-      border: colors.border,
-    },
+/**
+ * 将自定义 variant 映射到 Chakra UI 的 colorScheme
+ */
+const getColorScheme = (variant: BadgeProps['variant']) => {
+  switch (variant) {
+    case 'success':
+      return 'green'
+    case 'error':
+      return 'red'
+    case 'warning':
+      return 'yellow'
+    case 'info':
+      return 'blue'
+    case 'default':
+    default:
+      return 'gray'
   }
+}
 
-  const sizeStyles: Record<string, CSSProperties> = {
-    sm: { padding: '2px 8px', fontSize: fontSize.xs },
-    md: { padding: '4px 12px', fontSize: fontSize.sm },
-    lg: { padding: '6px 16px', fontSize: fontSize.md },
+/**
+ * 尺寸映射
+ */
+const getSizeProps = (size: BadgeProps['size']) => {
+  switch (size) {
+    case 'sm':
+      return { fontSize: 'xs', px: 2, py: 0.5 }
+    case 'md':
+      return { fontSize: 'sm', px: 3, py: 1 }
+    case 'lg':
+      return { fontSize: 'md', px: 4, py: 1.5 }
+    default:
+      return { fontSize: 'sm', px: 3, py: 1 }
   }
+}
 
-  const badgeStyle: CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: variantColors[variant].bg,
-    color: variantColors[variant].text,
-    border: `1px solid ${variantColors[variant].border}`,
-    borderRadius: radius.full,
-    fontWeight: '500',
-    whiteSpace: 'nowrap',
-    ...sizeStyles[size],
-  }
+export function Badge({ children, variant = 'default', size = 'md', ...chakraProps }: BadgeProps) {
+  const colorScheme = getColorScheme(variant)
+  const sizeProps = getSizeProps(size)
 
-  return <span style={badgeStyle}>{children}</span>
+  return (
+    <ChakraBadge
+      colorScheme={colorScheme}
+      variant="subtle"
+      borderRadius="full"
+      fontWeight="medium"
+      {...sizeProps}
+      {...chakraProps}
+    >
+      {children}
+    </ChakraBadge>
+  )
 }
