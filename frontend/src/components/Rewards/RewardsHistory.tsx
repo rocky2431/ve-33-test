@@ -16,36 +16,10 @@ interface HistoryRecord {
 export function RewardsHistory() {
   const { isConnected } = useAccount()
 
-  // 示例历史记录
-  const historyRecords: HistoryRecord[] = [
-    {
-      timestamp: Date.now() - 86400000,
-      type: 'fee',
-      poolName: 'SOLID/WBNB',
-      rewardToken: 'WBNB',
-      amount: 5000000000000000n,
-      value: '$125.50',
-      txHash: '0xabc123...',
-    },
-    {
-      timestamp: Date.now() - 172800000,
-      type: 'bribe',
-      poolName: 'USDT/USDC',
-      rewardToken: 'USDT',
-      amount: 100000000n,
-      value: '$100.00',
-      txHash: '0xdef456...',
-    },
-    {
-      timestamp: Date.now() - 259200000,
-      type: 'emission',
-      poolName: '-',
-      rewardToken: 'SOLID',
-      amount: 500000000000000000n,
-      value: '$90.50',
-      txHash: '0xghi789...',
-    },
-  ]
+  // TODO: 实现真实奖励历史查询
+  // 需要通过事件日志查询: Gauge.RewardPaid, Bribe.RewardPaid, Minter.Claim
+  // 建议使用 subgraph 或后端 API 进行索引
+  const historyRecords: HistoryRecord[] = []
 
   const getRewardTypeLabel = (type: string) => {
     switch (type) {
@@ -136,7 +110,12 @@ export function RewardsHistory() {
       <Card title="奖励历史">
         <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
           <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>📜</div>
-          <div>暂无历史记录</div>
+          <div style={{ marginBottom: spacing.md }}>暂无历史记录</div>
+          <div style={{ fontSize: fontSize.sm, color: colors.textSecondary }}>
+            奖励历史需要通过区块链事件日志查询
+            <br />
+            建议使用 The Graph 或后端 API 实现此功能
+          </div>
         </div>
       </Card>
     )
@@ -182,10 +161,10 @@ export function RewardsHistory() {
               fontSize: fontSize.xl,
               fontWeight: '600',
               marginTop: spacing.xs,
-              color: colors.success,
+              color: colors.textSecondary,
             }}
           >
-            $316.00
+            -
           </div>
         </div>
       </div>

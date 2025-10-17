@@ -1,4 +1,5 @@
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useMemo } from 'react'
 import VotingEscrowABI from '../abis/VotingEscrow.json'
 import { contracts } from '../config/web3'
 
@@ -108,12 +109,85 @@ export function useUserVeNFTs() {
     },
   })
 
-  // TODO: 需要遍历获取所有 tokenId 和详情
-  // 这里简化处理，实际应该使用 multicall 批量查询
+  // 生成索引数组，用于批量查询所有 tokenId
+  const indices = useMemo(() => {
+    if (!balance || balance === 0n) return []
+    const count = Number(balance)
+    return Array.from({ length: count }, (_, i) => i)
+  }, [balance])
+
+  // 批量查询所有 tokenId
+  const tokenIdContracts = useMemo(() => {
+    if (!address || indices.length === 0) return []
+    return indices.map((index) => ({
+      address: contracts.votingEscrow,
+      abi: VotingEscrowABI,
+      functionName: 'tokenOfOwnerByIndex',
+      args: [address, BigInt(index)],
+    }))
+  }, [address, indices])
+
+  const { data: tokenIds } = useReadContracts({
+    contracts: tokenIdContracts as any,
+  })
+
+  // 提取有效的 tokenId 列表
+  const validTokenIds = useMemo(() => {
+    if (!tokenIds) return []
+    return tokenIds
+      .map((result) => result.result as bigint)
+      .filter((id): id is bigint => !!id && id > 0n)
+  }, [tokenIds])
+
+  // 批量查询每个 NFT 的锁仓信息
+  const lockedContracts = useMemo(() => {
+    return validTokenIds.map((tokenId) => ({
+      address: contracts.votingEscrow,
+      abi: VotingEscrowABI,
+      functionName: 'locked',
+      args: [tokenId],
+    }))
+  }, [validTokenIds])
+
+  const { data: lockedData } = useReadContracts({
+    contracts: lockedContracts as any,
+  })
+
+  // 批量查询每个 NFT 的投票权重
+  const votingPowerContracts = useMemo(() => {
+    return validTokenIds.map((tokenId) => ({
+      address: contracts.votingEscrow,
+      abi: VotingEscrowABI,
+      functionName: 'balanceOfNFT',
+      args: [tokenId],
+    }))
+  }, [validTokenIds])
+
+  const { data: votingPowers } = useReadContracts({
+    contracts: votingPowerContracts as any,
+  })
+
+  // 组合所有数据
+  const nfts = useMemo<VeNFT[]>(() => {
+    if (!validTokenIds.length || !lockedData || !votingPowers) return []
+
+    return validTokenIds.map((tokenId, index) => {
+      const locked = lockedData[index]?.result as { amount: bigint; end: bigint } | undefined
+      const votingPower = votingPowers[index]?.result as bigint | undefined
+
+      return {
+        tokenId,
+        amount: locked?.amount ? BigInt(locked.amount) : 0n,
+        end: locked?.end || 0n,
+        votingPower: votingPower || 0n,
+      }
+    })
+  }, [validTokenIds, lockedData, votingPowers])
 
   return {
     balance: balance as bigint | undefined,
-    // nfts: [] as VeNFT[], // 实际项目中需要实现完整的查询逻辑
+    nfts,
+    isLoading: !!address && !!balance && balance > 0n && !lockedData,
   }
 }
 

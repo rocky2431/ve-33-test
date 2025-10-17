@@ -14,7 +14,7 @@ export function VoteList() {
   const { vote, isPending, isSuccess } = useVoteWeights()
 
   // 从合约查询所有池数据
-  const { pools, isLoading } = useAllGauges()
+  const { pools, isLoading, isError } = useAllGauges()
 
   // 过滤池列表
   const filteredPools = useMemo(() => {
@@ -120,6 +120,32 @@ export function VoteList() {
         <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
           <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>⏳</div>
           <div>加载池数据中...</div>
+        </div>
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card title="投票">
+        <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
+          <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>❌</div>
+          <div style={{ marginBottom: spacing.md }}>加载池数据失败</div>
+          <div style={{ fontSize: fontSize.sm }}>请检查网络连接或稍后重试</div>
+        </div>
+      </Card>
+    )
+  }
+
+  if (!pools || pools.length === 0) {
+    return (
+      <Card title="投票">
+        <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
+          <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>📊</div>
+          <div style={{ marginBottom: spacing.md }}>暂无可投票的流动性池</div>
+          <div style={{ fontSize: fontSize.sm }}>
+            创建流动性池后,对应的 Gauge 将自动出现在这里
+          </div>
         </div>
       </Card>
     )

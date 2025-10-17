@@ -10,7 +10,7 @@ export function ClaimRewards() {
   const { claimAll, isPending, isSuccess } = useClaimRewards()
 
   // 从合约查询真实奖励数据
-  const { rewards: rewardItems, isLoading } = useUserRewards()
+  const { rewards: rewardItems, isLoading, isError } = useUserRewards()
 
   // 计算奖励价值统计（简化：不显示价值，只显示数量）
   const rewardStats = useMemo(() => {
@@ -105,6 +105,18 @@ export function ClaimRewards() {
         <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
           <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>⏳</div>
           <div>加载奖励数据中...</div>
+        </div>
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card title="领取奖励">
+        <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
+          <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>❌</div>
+          <div style={{ marginBottom: spacing.md }}>加载奖励数据失败</div>
+          <div style={{ fontSize: fontSize.sm }}>请检查网络连接或稍后重试</div>
         </div>
       </Card>
     )

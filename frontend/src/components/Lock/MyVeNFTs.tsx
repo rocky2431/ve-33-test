@@ -15,11 +15,13 @@ interface VeNFTItem {
 
 export function MyVeNFTs() {
   const { isConnected } = useAccount()
-  const { balance } = useUserVeNFTs()
+  const { balance, nfts: rawNfts, isLoading } = useUserVeNFTs()
 
-  // TODO: 实际应该遍历查询所有 NFT 详情
-  // 这里简化处理
-  const nfts: VeNFTItem[] = []
+  // 将原始 NFT 数据转换为组件需要的格式,添加 isExpired 字段
+  const nfts: VeNFTItem[] = rawNfts.map((nft) => ({
+    ...nft,
+    isExpired: nft.end > 0n && nft.end < BigInt(Math.floor(Date.now() / 1000)),
+  }))
 
   const columns: Column<VeNFTItem>[] = [
     {
@@ -84,6 +86,17 @@ export function MyVeNFTs() {
         <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
           <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>👛</div>
           <div>请先连接钱包</div>
+        </div>
+      </Card>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Card title="我的 ve-NFT">
+        <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
+          <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>⏳</div>
+          <div>加载 NFT 数据中...</div>
         </div>
       </Card>
     )

@@ -101,7 +101,7 @@ export function useGaugeInfo(poolAddress?: Address) {
  */
 export function useAllGauges() {
   // 第一步：查询 Gauge 数量
-  const { data: length } = useReadContract({
+  const { data: length, isLoading: isLoadingLength, isError: isErrorLength } = useReadContract({
     address: contracts.voter,
     abi: VoterABI,
     functionName: 'gaugesLength',
@@ -273,31 +273,94 @@ export function useAllGauges() {
     return result
   }, [poolAddresses, poolMetadata, weights, bribeAddresses, tokenSymbols, validGaugeAddresses])
 
+  // 计算完整的 loading 状态
+  const isLoading = useMemo(() => {
+    // 如果长度查询中或出错,返回 loading 状态
+    if (isLoadingLength) return true
+    // 如果长度查询出错,不再 loading
+    if (isErrorLength) return false
+    // 如果长度为 0,不是 loading 状态(没有池子是正常情况)
+    if (!length || length === 0n) return false
+    // 如果有池子,检查是否所有数据都加载完成
+    return !poolMetadata || !weights || !bribeAddresses
+  }, [isLoadingLength, isErrorLength, length, poolMetadata, weights, bribeAddresses])
+
   return {
     length: length as bigint | undefined,
     pools,
-    isLoading: !poolAddresses || !poolMetadata,
+    isLoading,
+    isError: isErrorLength,
   }
 }
 
 /**
  * 查询用户的投票历史
  */
-export function useUserVotes(address?: Address) {
-  // 查询用户上次投票时间
+export function useUserVotes(tokenId?: bigint) {
+  const { pools, isLoading: poolsLoading, isError: poolsError } = useAllGauges()
+
+  // 批量查询用户对每个池的投票权重
+  const voteContracts = useMemo(() => {
+    if (!tokenId || !pools || pools.length === 0) return []
+    return pools.map((pool) => ({
+      address: contracts.voter,
+      abi: VoterABI,
+      functionName: 'votes',
+      args: [tokenId, pool.address],
+    }))
+  }, [tokenId, pools])
+
+  const { data: voteWeights } = useReadContracts({
+    contracts: voteContracts as any,
+  })
+
+  // 查询上次投票时间
   const { data: lastVoted } = useReadContract({
     address: contracts.voter,
     abi: VoterABI,
     functionName: 'lastVoted',
-    args: address ? [address] : undefined,
+    args: tokenId !== undefined ? [tokenId] : undefined,
     query: {
-      enabled: !!address,
+      enabled: tokenId !== undefined,
     },
   })
 
+  // 组合投票记录数据
+  const voteRecords = useMemo(() => {
+    if (!pools || !voteWeights) return []
+
+    const records: any[] = []
+    pools.forEach((pool, index) => {
+      const weight = voteWeights[index]?.result as bigint | undefined
+      if (weight && weight > 0n) {
+        records.push({
+          poolAddress: pool.address,
+          poolName: `${pool.token0Symbol || 'Unknown'}/${pool.token1Symbol || 'Unknown'}`,
+          token0Symbol: pool.token0Symbol,
+          token1Symbol: pool.token1Symbol,
+          stable: pool.stable,
+          weight: weight,
+          gaugeAddress: pool.gaugeAddress,
+        })
+      }
+    })
+    return records
+  }, [pools, voteWeights])
+
+  // 改进 loading 状态
+  const isLoading = useMemo(() => {
+    if (poolsLoading) return true
+    if (poolsError) return false
+    if (!tokenId) return false
+    if (!pools || pools.length === 0) return false
+    return !voteWeights
+  }, [poolsLoading, poolsError, tokenId, pools, voteWeights])
+
   return {
     lastVoted: lastVoted as bigint | undefined,
-    votes: [], // TODO: 实现完整的投票记录查询
+    votes: voteRecords,
+    isLoading,
+    isError: poolsError,
   }
 }
 

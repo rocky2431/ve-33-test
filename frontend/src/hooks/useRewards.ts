@@ -162,7 +162,7 @@ export function useUserRewards() {
   const { address } = useAccount()
 
   // 获取所有池信息
-  const { pools, isLoading: poolsLoading } = useAllGauges()
+  const { pools, isLoading: poolsLoading, isError: poolsError } = useAllGauges()
 
   // 筛选出有gauge的池
   const gaugesWithPools = useMemo(() => {
@@ -232,10 +232,19 @@ export function useUserRewards() {
     }
   }, [rewards])
 
+  // 改进 loading 状态逻辑
+  const isLoading = useMemo(() => {
+    if (poolsLoading) return true
+    if (poolsError) return false  // 出错时不再 loading
+    if (!pools || pools.length === 0) return false  // 没有池子不是 loading
+    return !gaugeRewards  // 有池子但奖励数据未加载
+  }, [poolsLoading, poolsError, pools, gaugeRewards])
+
   return {
     rewards,
     stats,
-    isLoading: poolsLoading || !gaugeRewards,
+    isLoading,
+    isError: poolsError,
   }
 }
 
