@@ -252,6 +252,8 @@ ve-NFT 持有者每周投票：
 
 ## 📚 文档导航
 
+### 核心文档
+- **[README.md](README.md)** (本文档) - 项目概述和快速开始
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - 完整的部署教程
   - 环境准备与配置
   - 部署步骤详解
@@ -263,6 +265,22 @@ ve-NFT 持有者每周投票：
   - 智能合约开发
   - 前端开发指南
   - 测试流程与清单
+
+- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - 项目当前状态
+  - 已完成工作总结
+  - 待完成任务清单
+  - 进度统计
+  - 近期计划
+
+### 专门指南
+- **[docs/INDEX.md](docs/INDEX.md)** - 完整文档索引
+- **[docs/BSC_TESTNET_DEPLOYMENT.md](docs/BSC_TESTNET_DEPLOYMENT.md)** - BSC Testnet 部署指南（P0修复版本）
+
+### 技术分析
+- **[CONTRACT_AUDIT_REPORT.md](CONTRACT_AUDIT_REPORT.md)** - 合约审计报告
+- **[TOKENOMICS_ANALYSIS.md](TOKENOMICS_ANALYSIS.md)** - 代币经济学分析
+- **[P0_TEST_PLAN.md](P0_TEST_PLAN.md)** - P0 测试计划
+- **[TASK_EXECUTION_PLAN.md](TASK_EXECUTION_PLAN.md)** - 任务执行计划
 
 ---
 
