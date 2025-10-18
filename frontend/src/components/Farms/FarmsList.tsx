@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import { useAccount } from 'wagmi'
 import { Card, Table, Badge, Button, Input, type Column } from '../common'
 import { useAllGauges, type PoolInfo } from '../../hooks/useVote'
 import { useTokenPrice, formatUSDPrice } from '../../hooks/useTokenPrice'
@@ -7,7 +6,6 @@ import { formatTokenAmount } from '../../utils/format'
 import { colors, spacing, fontSize } from '../../constants/theme'
 
 export function FarmsList() {
-  const { isConnected } = useAccount()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'stable' | 'volatile'>('all')
 
@@ -141,7 +139,7 @@ export function FarmsList() {
       key: 'actions',
       title: '操作',
       align: 'right',
-      render: (_, record) => (
+      render: () => (
         <div style={{ display: 'flex', gap: spacing.xs, justifyContent: 'flex-end' }}>
           <Button
             variant="primary"

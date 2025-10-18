@@ -43,7 +43,7 @@ export function AddLiquidity() {
 
   // 查询池地址和信息
   const pairAddress = usePairAddress(tokenA?.address, tokenB?.address, stable)
-  const { token0, token1, reserve0, reserve1, totalSupply } = usePoolInfo(pairAddress)
+  const { token0, reserve0, reserve1, totalSupply } = usePoolInfo(pairAddress)
 
   // 根据 token0/token1 的顺序，确定 reserveA 和 reserveB
   // tokenA 可能对应 token0 或 token1，需要判断

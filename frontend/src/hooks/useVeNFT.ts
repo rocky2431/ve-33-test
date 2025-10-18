@@ -212,7 +212,7 @@ export function useUserVeNFTs() {
   return {
     balance: balance as bigint | undefined,
     nfts,
-    isLoading: !!address && !!balance && balance > 0n && !lockedData,
+    isLoading: !!address && !!balance && (balance as bigint) > 0n && !lockedData,
   }
 }
 

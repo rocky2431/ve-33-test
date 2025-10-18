@@ -30,7 +30,7 @@ const durationPresets = [
 export function MyVeNFTs() {
   const { isConnected } = useAccount()
   const { balance, nfts: rawNfts, isLoading } = useUserVeNFTs()
-  const { increaseAmount, increaseUnlockTime, withdraw, isPending, isSuccess } = useVeNFT()
+  const { increaseAmount, increaseUnlockTime, withdraw, isPending } = useVeNFT()
   const maxLockDuration = useMaxLockDuration() || BigInt(4 * 365 * 86400) // 默认4年
 
   // Modal 状态管理
@@ -322,7 +322,7 @@ export function MyVeNFTs() {
                 borderRadius: radius.sm,
                 border: `1px solid ${colors.border}`,
                 backgroundColor: colors.bgSecondary,
-                color: colors.text,
+                color: colors.textPrimary,
               }}
             />
           </div>

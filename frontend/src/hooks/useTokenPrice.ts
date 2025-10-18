@@ -1,14 +1,13 @@
 import { useReadContract } from 'wagmi'
 import { type Address } from 'viem'
 import PairABI from '../abis/Pair.json'
-import { contracts } from '../config/web3'
 import { TOKENS } from '../constants/tokens'
 
 /**
  * 计算代币的SRUSD价格
  * 通过SRT/SRUSD池子作为价格锚点
  */
-export function useTokenPrice(tokenAddress?: Address) {
+export function useTokenPrice() {
   // SRT/SRUSD池子地址（用户刚创建的）
   const SRT_SRUSD_POOL = '0x9af24cE2e9Fa0b96E3a7654ceA2D89517Dc85dD8' as Address
 
@@ -41,7 +40,7 @@ export function useTokenPrice(tokenAddress?: Address) {
     const reserve1 = reserves[1]
 
     // 确定SRT和SRUSD的储备金
-    const isSrtToken0 = srtSrusdToken0.toLowerCase() === TOKENS.SRT.address.toLowerCase()
+    const isSrtToken0 = (srtSrusdToken0 as Address).toLowerCase() === TOKENS.SRT.address.toLowerCase()
     const srtReserve = isSrtToken0 ? reserve0 : reserve1
     const srusdReserve = isSrtToken0 ? reserve1 : reserve0
 

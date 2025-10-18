@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { type Address } from 'viem'
 import { Card, Input, Button } from '../common'
 import { useLiquidity, usePoolInfo } from '../../hooks/useLiquidity'
 import { useUserLiquidityPositions } from '../../hooks/useUserLiquidityPositions'
@@ -29,7 +28,7 @@ export function RemoveLiquidity() {
   const [slippage] = useState(0.5)
 
   // 查询选中池子的实时信息
-  const { token0, token1, reserve0, reserve1, totalSupply, lpBalance, refetchBalance } = usePoolInfo(
+  const { reserve0, reserve1, totalSupply, lpBalance, refetchBalance } = usePoolInfo(
     selectedPosition?.pairAddress
   )
 

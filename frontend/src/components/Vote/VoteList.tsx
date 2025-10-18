@@ -53,7 +53,6 @@ export function VoteList() {
 
     // 使用第一个 NFT 进行投票（未来可以让用户选择）
     const tokenId = nfts[0].tokenId
-    const nftEndTime = Number(nfts[0].end)
     const currentTime = Math.floor(Date.now() / 1000)
 
     // 估算NFT创建时间(基于锁定结束时间 - 锁定时长)

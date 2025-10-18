@@ -11,7 +11,7 @@ import { TOKENS } from '../constants/tokens'
  */
 export function useUserPortfolio() {
   const { address } = useAccount()
-  const { calculatePrice, calculatePoolTVL, isReady: isPriceReady } = useTokenPrice()
+  const { calculatePrice, isReady: isPriceReady } = useTokenPrice()
 
   // 钱包余额
   const { balance: srtBalance } = useTokenBalance(TOKENS.SRT.address, address)
@@ -21,7 +21,7 @@ export function useUserPortfolio() {
   const { positions, isLoading: isPositionsLoading } = useUserLiquidityPositions()
 
   // ve-NFT
-  const { balance: veNFTBalance, tokens: veNFTs } = useUserVeNFTs()
+  const { balance: veNFTBalance, nfts: veNFTs } = useUserVeNFTs()
 
   // 计算钱包余额USD价值
   const walletValueUSD = isPriceReady
@@ -49,7 +49,7 @@ export function useUserPortfolio() {
 
   // 计算ve-NFT锁仓价值（简化，实际需要查询每个NFT的锁仓量）
   const veNFTValueUSD = isPriceReady && veNFTs && veNFTs.length > 0
-    ? veNFTs.reduce((sum, nft) => {
+    ? veNFTs.reduce((sum: bigint, _nft) => {
         // 这里需要查询每个NFT的锁仓量，暂时使用0
         return sum
       }, 0n)

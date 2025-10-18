@@ -1,5 +1,3 @@
-import { useAccount, useReadContract } from 'wagmi'
-import { contracts } from '../config/web3'
 import { useUserVeNFTs } from './useVeNFT'
 import { useAllGauges } from './useVote'
 
@@ -17,9 +15,8 @@ export interface RewardItem {
  * 聚合所有来源的奖励：手续费、贿赂、质押排放
  */
 export function useUserRewards() {
-  const { address } = useAccount()
-  const { tokens: veNFTs } = useUserVeNFTs()
-  const { pools } = useAllGauges()
+  const { nfts: _veNFTs } = useUserVeNFTs()
+  const { pools: _pools } = useAllGauges()
 
   // TODO: 实现实际的奖励查询
   // 这需要：

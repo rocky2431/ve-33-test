@@ -17,7 +17,6 @@ import {
   Flex,
   Badge,
   Skeleton,
-  Icon,
   useToast,
 } from '@chakra-ui/react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -42,7 +41,7 @@ const mockEarningsData = [
 ]
 
 export function DashboardV2() {
-  const { address, isConnected } = useAccount()
+  const { isConnected } = useAccount()
   const [autoRefresh, setAutoRefresh] = useState(true)
   const toast = useToast()
 
@@ -348,7 +347,7 @@ export function DashboardV2() {
           <CardBody>
             {positions && positions.length > 0 ? (
               <Box>
-                {positions.slice(0, 3).map((position, idx) => (
+                {positions.slice(0, 3).map((position) => (
                   <Box
                     key={position.pairAddress}
                     p={3}
@@ -431,7 +430,7 @@ export function DashboardV2() {
                   >
                     <Flex justify="space-between" align="center">
                       <Box>
-                        <Text fontWeight="600">NFT #{nft.tokenId}</Text>
+                        <Text fontWeight="600">NFT #{nft.tokenId.toString()}</Text>
                         <Text fontSize="sm" color="gray.600">
                           投票权重: {formatTokenAmount(nft.votingPower, 18, 2)}
                         </Text>
