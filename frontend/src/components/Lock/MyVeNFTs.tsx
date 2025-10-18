@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { Card, Table, Badge, Button, type Column } from '../common'
-import { useUserVeNFTs } from '../../hooks/useVeNFT'
+import { Card, Table, Badge, Button, Modal, type Column } from '../common'
+import { useUserVeNFTs, useVeNFT } from '../../hooks/useVeNFT'
 import { formatTokenAmount } from '../../utils/format'
 import { formatRemainingTime } from '../../utils/calculations'
 import { colors, spacing, fontSize, radius } from '../../constants/theme'
 import { contracts } from '../../config/web3'
+import { parseUnits } from 'viem'
 
 interface VeNFTItem {
   tokenId: bigint
@@ -17,6 +19,20 @@ interface VeNFTItem {
 export function MyVeNFTs() {
   const { isConnected } = useAccount()
   const { balance, nfts: rawNfts, isLoading } = useUserVeNFTs()
+  const { increaseAmount, increaseUnlockTime, withdraw, isPending, isSuccess } = useVeNFT()
+
+  // Modal 状态管理
+  const [increaseAmountModal, setIncreaseAmountModal] = useState<{
+    isOpen: boolean
+    tokenId?: bigint
+    amount: string
+  }>({ isOpen: false, amount: '' })
+
+  const [increaseTimeModal, setIncreaseTimeModal] = useState<{
+    isOpen: boolean
+    tokenId?: bigint
+    days: string
+  }>({ isOpen: false, days: '' })
 
   // 将原始 NFT 数据转换为组件需要的格式,添加 isExpired 字段
   const nfts: VeNFTItem[] = rawNfts.map((nft) => ({
@@ -71,16 +87,29 @@ export function MyVeNFTs() {
           </Button>
           {!record.isExpired ? (
             <>
-              <Button variant="secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
+              <Button
+                variant="secondary"
+                style={{ padding: '8px 16px', fontSize: '14px' }}
+                onClick={() => setIncreaseAmountModal({ isOpen: true, tokenId: record.tokenId, amount: '' })}
+              >
                 增加金额
               </Button>
-              <Button variant="secondary" style={{ padding: '8px 16px', fontSize: '14px' }}>
+              <Button
+                variant="secondary"
+                style={{ padding: '8px 16px', fontSize: '14px' }}
+                onClick={() => setIncreaseTimeModal({ isOpen: true, tokenId: record.tokenId, days: '' })}
+              >
                 延长时间
               </Button>
             </>
           ) : (
-            <Button variant="primary" style={{ padding: '8px 16px', fontSize: '14px' }}>
-              提取
+            <Button
+              variant="primary"
+              style={{ padding: '8px 16px', fontSize: '14px' }}
+              onClick={() => handleWithdraw(record.tokenId)}
+              disabled={isPending}
+            >
+              {isPending ? '提取中...' : '提取'}
             </Button>
           )}
         </div>
@@ -142,6 +171,48 @@ export function MyVeNFTs() {
     } catch (error) {
       console.error('添加NFT失败:', error)
       alert('❌ 添加失败，请确保您的钱包支持此功能')
+    }
+  }
+
+  // 处理增加金额
+  const handleIncreaseAmount = async () => {
+    if (!increaseAmountModal.tokenId || !increaseAmountModal.amount) return
+
+    try {
+      const amount = parseUnits(increaseAmountModal.amount, 18)
+      await increaseAmount(increaseAmountModal.tokenId, amount)
+      setIncreaseAmountModal({ isOpen: false, amount: '' })
+      alert('✅ 增加金额交易已提交!')
+    } catch (error) {
+      console.error('增加金额失败:', error)
+      alert('❌ 交易失败')
+    }
+  }
+
+  // 处理延长时间
+  const handleIncreaseTime = async () => {
+    if (!increaseTimeModal.tokenId || !increaseTimeModal.days) return
+
+    try {
+      const days = parseInt(increaseTimeModal.days)
+      const duration = days * 24 * 60 * 60 // 转换为秒
+      await increaseUnlockTime(increaseTimeModal.tokenId, duration)
+      setIncreaseTimeModal({ isOpen: false, days: '' })
+      alert('✅ 延长时间交易已提交!')
+    } catch (error) {
+      console.error('延长时间失败:', error)
+      alert('❌ 交易失败')
+    }
+  }
+
+  // 处理提取
+  const handleWithdraw = async (tokenId: bigint) => {
+    try {
+      await withdraw(tokenId)
+      alert('✅ 提取交易已提交!')
+    } catch (error) {
+      console.error('提取失败:', error)
+      alert('❌ 交易失败')
     }
   }
 
@@ -217,6 +288,99 @@ export function MyVeNFTs() {
       </div>
 
       <Table columns={columns} data={nfts} rowKey={(record) => record.tokenId.toString()} />
+
+      {/* 增加金额 Modal */}
+      <Modal
+        isOpen={increaseAmountModal.isOpen}
+        onClose={() => setIncreaseAmountModal({ isOpen: false, amount: '' })}
+        title="增加锁仓金额"
+      >
+        <div style={{ padding: spacing.md }}>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{ display: 'block', marginBottom: spacing.xs, fontSize: fontSize.sm }}>
+              增加数量 (SRT)
+            </label>
+            <input
+              type="number"
+              value={increaseAmountModal.amount}
+              onChange={(e) => setIncreaseAmountModal({ ...increaseAmountModal, amount: e.target.value })}
+              placeholder="输入要增加的 SRT 数量"
+              style={{
+                width: '100%',
+                padding: spacing.sm,
+                fontSize: fontSize.sm,
+                borderRadius: radius.sm,
+                border: `1px solid ${colors.border}`,
+                backgroundColor: colors.bgSecondary,
+                color: colors.text,
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: spacing.sm, justifyContent: 'flex-end' }}>
+            <Button
+              variant="secondary"
+              onClick={() => setIncreaseAmountModal({ isOpen: false, amount: '' })}
+            >
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleIncreaseAmount}
+              disabled={isPending || !increaseAmountModal.amount}
+            >
+              {isPending ? '处理中...' : '确认增加'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 延长时间 Modal */}
+      <Modal
+        isOpen={increaseTimeModal.isOpen}
+        onClose={() => setIncreaseTimeModal({ isOpen: false, days: '' })}
+        title="延长锁仓时间"
+      >
+        <div style={{ padding: spacing.md }}>
+          <div style={{ marginBottom: spacing.md }}>
+            <label style={{ display: 'block', marginBottom: spacing.xs, fontSize: fontSize.sm }}>
+              延长天数
+            </label>
+            <input
+              type="number"
+              value={increaseTimeModal.days}
+              onChange={(e) => setIncreaseTimeModal({ ...increaseTimeModal, days: e.target.value })}
+              placeholder="输入要延长的天数"
+              style={{
+                width: '100%',
+                padding: spacing.sm,
+                fontSize: fontSize.sm,
+                borderRadius: radius.sm,
+                border: `1px solid ${colors.border}`,
+                backgroundColor: colors.bgSecondary,
+                color: colors.text,
+              }}
+            />
+            <div style={{ fontSize: fontSize.xs, color: colors.textTertiary, marginTop: spacing.xs }}>
+              💡 延长后的总锁仓时间不能超过 4 年
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: spacing.sm, justifyContent: 'flex-end' }}>
+            <Button
+              variant="secondary"
+              onClick={() => setIncreaseTimeModal({ isOpen: false, days: '' })}
+            >
+              取消
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleIncreaseTime}
+              disabled={isPending || !increaseTimeModal.days}
+            >
+              {isPending ? '处理中...' : '确认延长'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Card>
   )
 }

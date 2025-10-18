@@ -172,13 +172,38 @@ export function useUserVeNFTs() {
     if (!validTokenIds.length || !lockedData || !votingPowers) return []
 
     return validTokenIds.map((tokenId, index) => {
-      const locked = lockedData[index]?.result as { amount: bigint; end: bigint } | undefined
+      const lockedResult = lockedData[index]?.result
       const votingPower = votingPowers[index]?.result as bigint | undefined
+
+      // 处理 locked 返回值 - 可能是 tuple [amount, end] 或者对象 {amount, end}
+      let amount: bigint = 0n
+      let end: bigint = 0n
+
+      if (lockedResult) {
+        if (Array.isArray(lockedResult)) {
+          // Tuple 格式: [amount, end]
+          amount = lockedResult[0] ? BigInt(lockedResult[0]) : 0n
+          end = lockedResult[1] ? BigInt(lockedResult[1]) : 0n
+        } else if (typeof lockedResult === 'object') {
+          // Object 格式: {amount, end}
+          const locked = lockedResult as { amount: bigint; end: bigint }
+          amount = locked.amount ? BigInt(locked.amount) : 0n
+          end = locked.end || 0n
+        }
+      }
+
+      console.log('🔍 NFT Data:', {
+        tokenId: tokenId.toString(),
+        amount: amount.toString(),
+        end: end.toString(),
+        votingPower: votingPower?.toString(),
+        rawLocked: lockedResult,
+      })
 
       return {
         tokenId,
-        amount: locked?.amount ? BigInt(locked.amount) : 0n,
-        end: locked?.end || 0n,
+        amount,
+        end,
         votingPower: votingPower || 0n,
       }
     })
