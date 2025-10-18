@@ -267,3 +267,16 @@ export function useIsVoted(tokenId?: bigint) {
 
   return voted as boolean | undefined
 }
+
+/**
+ * 获取最大锁定时长
+ */
+export function useMaxLockDuration() {
+  const { data: maxDuration } = useReadContract({
+    address: contracts.votingEscrow,
+    abi: VotingEscrowABI,
+    functionName: 'MAX_LOCK_DURATION',
+  })
+
+  return maxDuration as bigint | undefined
+}

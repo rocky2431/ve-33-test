@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { Card, Table, Badge, Button, Modal, type Column } from '../common'
-import { useUserVeNFTs, useVeNFT } from '../../hooks/useVeNFT'
+import { useUserVeNFTs, useVeNFT, useMaxLockDuration } from '../../hooks/useVeNFT'
 import { formatTokenAmount } from '../../utils/format'
 import { formatRemainingTime } from '../../utils/calculations'
 import { colors, spacing, fontSize, radius } from '../../constants/theme'
@@ -16,10 +16,22 @@ interface VeNFTItem {
   isExpired: boolean
 }
 
+// 延长时长预设选项
+const durationPresets = [
+  { label: '1 周', value: 7 * 86400 },
+  { label: '1 个月', value: 30 * 86400 },
+  { label: '3 个月', value: 90 * 86400 },
+  { label: '6 个月', value: 180 * 86400 },
+  { label: '1 年', value: 365 * 86400 },
+  { label: '2 年', value: 2 * 365 * 86400 },
+  { label: '4 年', value: 4 * 365 * 86400 },
+]
+
 export function MyVeNFTs() {
   const { isConnected } = useAccount()
   const { balance, nfts: rawNfts, isLoading } = useUserVeNFTs()
   const { increaseAmount, increaseUnlockTime, withdraw, isPending, isSuccess } = useVeNFT()
+  const maxLockDuration = useMaxLockDuration() || BigInt(4 * 365 * 86400) // 默认4年
 
   // Modal 状态管理
   const [increaseAmountModal, setIncreaseAmountModal] = useState<{
@@ -31,8 +43,8 @@ export function MyVeNFTs() {
   const [increaseTimeModal, setIncreaseTimeModal] = useState<{
     isOpen: boolean
     tokenId?: bigint
-    days: string
-  }>({ isOpen: false, days: '' })
+    lockDuration: number  // 延长的时间（秒）
+  }>({ isOpen: false, lockDuration: 7 * 86400 })  // 默认延长1周
 
   // 将原始 NFT 数据转换为组件需要的格式,添加 isExpired 字段
   const nfts: VeNFTItem[] = rawNfts.map((nft) => ({
@@ -97,7 +109,7 @@ export function MyVeNFTs() {
               <Button
                 variant="secondary"
                 style={{ padding: '8px 16px', fontSize: '14px' }}
-                onClick={() => setIncreaseTimeModal({ isOpen: true, tokenId: record.tokenId, days: '' })}
+                onClick={() => setIncreaseTimeModal({ isOpen: true, tokenId: record.tokenId, lockDuration: 7 * 86400 })}
               >
                 延长时间
               </Button>
@@ -191,13 +203,11 @@ export function MyVeNFTs() {
 
   // 处理延长时间
   const handleIncreaseTime = async () => {
-    if (!increaseTimeModal.tokenId || !increaseTimeModal.days) return
+    if (!increaseTimeModal.tokenId || !increaseTimeModal.lockDuration) return
 
     try {
-      const days = parseInt(increaseTimeModal.days)
-      const duration = days * 24 * 60 * 60 // 转换为秒
-      await increaseUnlockTime(increaseTimeModal.tokenId, duration)
-      setIncreaseTimeModal({ isOpen: false, days: '' })
+      await increaseUnlockTime(increaseTimeModal.tokenId, increaseTimeModal.lockDuration)
+      setIncreaseTimeModal({ isOpen: false, lockDuration: 7 * 86400 })
       alert('✅ 延长时间交易已提交!')
     } catch (error) {
       console.error('延长时间失败:', error)
@@ -337,48 +347,163 @@ export function MyVeNFTs() {
       {/* 延长时间 Modal */}
       <Modal
         isOpen={increaseTimeModal.isOpen}
-        onClose={() => setIncreaseTimeModal({ isOpen: false, days: '' })}
+        onClose={() => setIncreaseTimeModal({ isOpen: false, lockDuration: 7 * 86400 })}
         title="延长锁仓时间"
       >
         <div style={{ padding: spacing.md }}>
-          <div style={{ marginBottom: spacing.md }}>
-            <label style={{ display: 'block', marginBottom: spacing.xs, fontSize: fontSize.sm }}>
-              延长天数
-            </label>
-            <input
-              type="number"
-              value={increaseTimeModal.days}
-              onChange={(e) => setIncreaseTimeModal({ ...increaseTimeModal, days: e.target.value })}
-              placeholder="输入要延长的天数"
-              style={{
-                width: '100%',
-                padding: spacing.sm,
-                fontSize: fontSize.sm,
-                borderRadius: radius.sm,
-                border: `1px solid ${colors.border}`,
-                backgroundColor: colors.bgSecondary,
-                color: colors.text,
-              }}
-            />
-            <div style={{ fontSize: fontSize.xs, color: colors.textTertiary, marginTop: spacing.xs }}>
-              💡 延长后的总锁仓时间不能超过 4 年
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: spacing.sm, justifyContent: 'flex-end' }}>
-            <Button
-              variant="secondary"
-              onClick={() => setIncreaseTimeModal({ isOpen: false, days: '' })}
-            >
-              取消
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleIncreaseTime}
-              disabled={isPending || !increaseTimeModal.days}
-            >
-              {isPending ? '处理中...' : '确认延长'}
-            </Button>
-          </div>
+          {/* 获取当前NFT信息用于预览 */}
+          {(() => {
+            const currentNFT = nfts.find((nft) => nft.tokenId === increaseTimeModal.tokenId)
+            const currentEnd = currentNFT?.end || 0n
+            const currentTimestamp = BigInt(Math.floor(Date.now() / 1000))
+
+            // 简化逻辑：滑块范围从1周到MAX_LOCK_DURATION
+            // 具体的4年限制（从创建时间算起）由合约验证
+            const minDuration = 7 * 86400 // 最小延长1周
+            const maxDuration = Number(maxLockDuration) // 使用合约的MAX_LOCK_DURATION
+
+            // 确保当前选中的duration在有效范围内
+            const safeDuration = Math.max(minDuration, Math.min(increaseTimeModal.lockDuration, maxDuration))
+            const newEnd = currentEnd + BigInt(safeDuration)
+
+            return (
+              <>
+                {/* 时长预设按钮 */}
+                <div style={{ marginBottom: spacing.lg }}>
+                  <label style={{ display: 'block', marginBottom: spacing.sm, fontSize: fontSize.sm, fontWeight: '500' }}>
+                    快速选择延长时长
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: spacing.xs }}>
+                    {durationPresets.map((preset) => {
+                      // 只显示在有效范围内的预设选项
+                      const isValid = preset.value >= minDuration && preset.value <= maxDuration
+                      return (
+                        <Button
+                          key={preset.value}
+                          variant={increaseTimeModal.lockDuration === preset.value ? 'primary' : 'secondary'}
+                          onClick={() => setIncreaseTimeModal({ ...increaseTimeModal, lockDuration: preset.value })}
+                          disabled={!isValid}
+                          style={{
+                            padding: '8px 12px',
+                            fontSize: fontSize.xs,
+                            whiteSpace: 'nowrap',
+                            opacity: isValid ? 1 : 0.5
+                          }}
+                        >
+                          {preset.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* 时间滑块 */}
+                <div style={{ marginBottom: spacing.lg }}>
+                  <label style={{ display: 'block', marginBottom: spacing.sm, fontSize: fontSize.sm, fontWeight: '500' }}>
+                    延长时长
+                  </label>
+                  <input
+                    type="range"
+                    min={minDuration}
+                    max={maxDuration}
+                    step={7 * 86400} // 步长 1 周
+                    value={safeDuration}
+                    onChange={(e) =>
+                      setIncreaseTimeModal({ ...increaseTimeModal, lockDuration: parseInt(e.target.value) })
+                    }
+                    style={{
+                      width: '100%',
+                      height: '8px',
+                      borderRadius: radius.full,
+                      outline: 'none',
+                      cursor: 'pointer',
+                      background: `linear-gradient(to right, ${colors.primary} 0%, ${colors.primary} ${
+                        maxDuration > minDuration ? ((safeDuration - minDuration) / (maxDuration - minDuration)) * 100 : 0
+                      }%, ${colors.border} ${
+                        maxDuration > minDuration ? ((safeDuration - minDuration) / (maxDuration - minDuration)) * 100 : 0
+                      }%, ${colors.border} 100%)`,
+                    }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: spacing.xs }}>
+                    <span style={{ fontSize: fontSize.xs, color: colors.textTertiary }}>
+                      最少 1 周
+                    </span>
+                    <span style={{ fontSize: fontSize.xs, color: colors.textTertiary }}>
+                      最多 {Math.floor(maxDuration / 86400 / 365)} 年
+                    </span>
+                  </div>
+                </div>
+
+                {/* 预览信息 */}
+                <div
+                  style={{
+                    padding: spacing.md,
+                    backgroundColor: colors.bgPrimary,
+                    borderRadius: radius.md,
+                    marginBottom: spacing.lg,
+                    border: `1px solid ${colors.border}`,
+                  }}
+                >
+                  <div style={{ fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.sm, color: colors.primary }}>
+                    📊 延长预览
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>当前剩余时间</span>
+                      <span style={{ fontSize: fontSize.sm, fontWeight: '500' }}>
+                        {formatRemainingTime(currentEnd)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>延长时长</span>
+                      <span style={{ fontSize: fontSize.sm, fontWeight: '500', color: colors.warning }}>
+                        + {formatRemainingTime(BigInt(safeDuration) + currentTimestamp)}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: '1px',
+                        backgroundColor: colors.border,
+                        margin: `${spacing.xs} 0`
+                      }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>延长后剩余时间</span>
+                      <span style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.success }}>
+                        {formatRemainingTime(newEnd)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: fontSize.xs, color: colors.textTertiary }}>到期时间</span>
+                      <span style={{ fontSize: fontSize.xs, color: colors.textTertiary }}>
+                        {new Date(Number(newEnd) * 1000).toLocaleString('zh-CN')}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: fontSize.xs, color: colors.textTertiary, marginTop: spacing.sm, lineHeight: 1.6 }}>
+                    💡 合约会验证：从 NFT 创建时间算起，总锁定时间不超过 {Math.floor(Number(maxLockDuration) / 86400 / 365)} 年
+                  </div>
+                </div>
+
+                {/* 操作按钮 */}
+                <div style={{ display: 'flex', gap: spacing.sm, justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIncreaseTimeModal({ isOpen: false, lockDuration: 7 * 86400 })}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleIncreaseTime}
+                    disabled={isPending || !increaseTimeModal.lockDuration}
+                  >
+                    {isPending ? '处理中...' : '确认延长'}
+                  </Button>
+                </div>
+              </>
+            )
+          })()}
         </div>
       </Modal>
     </Card>
