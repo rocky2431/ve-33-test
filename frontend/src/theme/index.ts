@@ -9,8 +9,8 @@ import { components } from './components'
 
 // 主题配置
 const config: ThemeConfig = {
-  initialColorMode: 'light',  // 默认亮色主题
-  useSystemColorMode: true,   // 使用系统主题设置
+  initialColorMode: 'dark',  // 默认暗色主题
+  useSystemColorMode: false,   // 强制使用暗色主题
 }
 
 // 全局样式

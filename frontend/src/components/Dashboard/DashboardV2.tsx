@@ -266,41 +266,41 @@ export function DashboardV2() {
           {userRewards.hasRewards ? (
             <>
               <Grid templateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap={4} mb={4}>
-                <Box p={4} bg="blue.50" borderRadius="md">
-                  <Text fontSize="sm" color="gray.600">
+                <Box p={4} bg="blue.900" borderRadius="md" borderWidth={1} borderColor="blue.700">
+                  <Text fontSize="sm" color="blue.300">
                     💵 交易手续费
                   </Text>
-                  <Text fontSize="2xl" fontWeight="bold" color="blue.600">
+                  <Text fontSize="2xl" fontWeight="bold" color="blue.400">
                     {formatUSDPrice(userRewards.totalFeeUSD, 2)}
                   </Text>
                 </Box>
 
-                <Box p={4} bg="purple.50" borderRadius="md">
-                  <Text fontSize="sm" color="gray.600">
+                <Box p={4} bg="purple.900" borderRadius="md" borderWidth={1} borderColor="purple.700">
+                  <Text fontSize="sm" color="purple.300">
                     🎯 投票贿赂
                   </Text>
-                  <Text fontSize="2xl" fontWeight="bold" color="purple.600">
+                  <Text fontSize="2xl" fontWeight="bold" color="purple.400">
                     {formatUSDPrice(userRewards.totalBribeUSD, 2)}
                   </Text>
                 </Box>
 
-                <Box p={4} bg="green.50" borderRadius="md">
-                  <Text fontSize="sm" color="gray.600">
+                <Box p={4} bg="green.900" borderRadius="md" borderWidth={1} borderColor="green.700">
+                  <Text fontSize="sm" color="green.300">
                     ⛏️ LP质押奖励
                   </Text>
-                  <Text fontSize="2xl" fontWeight="bold" color="green.600">
+                  <Text fontSize="2xl" fontWeight="bold" color="green.400">
                     {formatUSDPrice(userRewards.totalEmissionUSD, 2)}
                   </Text>
                 </Box>
               </Grid>
 
-              <Box p={4} bg="orange.50" borderRadius="md" borderWidth={2} borderColor="orange.300">
+              <Box p={4} bg="orange.900" borderRadius="md" borderWidth={2} borderColor="orange.600">
                 <Flex justify="space-between" align="center">
                   <Box>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="orange.300">
                       总计待领取
                     </Text>
-                    <Text fontSize="3xl" fontWeight="bold" color="orange.600">
+                    <Text fontSize="3xl" fontWeight="bold" color="orange.400">
                       {formatUSDPrice(userRewards.totalRewardsUSD, 2)}
                     </Text>
                   </Box>
@@ -353,9 +353,11 @@ export function DashboardV2() {
                     key={position.pairAddress}
                     p={3}
                     mb={2}
-                    bg="gray.50"
+                    bg="gray.700"
                     borderRadius="md"
-                    _hover={{ bg: 'gray.100' }}
+                    borderWidth={1}
+                    borderColor="gray.600"
+                    _hover={{ bg: 'gray.600', borderColor: 'blue.500' }}
                   >
                     <Flex justify="space-between" align="center">
                       <Box>
@@ -363,7 +365,7 @@ export function DashboardV2() {
                           {position.token0Symbol || position.token0.slice(0, 6)} /{' '}
                           {position.token1Symbol || position.token1.slice(0, 6)}
                         </Text>
-                        <Text fontSize="sm" color="gray.600">
+                        <Text fontSize="sm" color="gray.400">
                           LP: {formatTokenAmount(position.lpBalance, 18, 4)}
                         </Text>
                       </Box>
@@ -421,9 +423,11 @@ export function DashboardV2() {
                     key={nft.tokenId}
                     p={3}
                     mb={2}
-                    bg="purple.50"
+                    bg="purple.900"
                     borderRadius="md"
-                    _hover={{ bg: 'purple.100' }}
+                    borderWidth={1}
+                    borderColor="purple.700"
+                    _hover={{ bg: 'purple.800', borderColor: 'purple.500' }}
                   >
                     <Flex justify="space-between" align="center">
                       <Box>
@@ -561,26 +565,27 @@ function QuickActionCard({
     <Box
       as="button"
       p={4}
-      bg="white"
+      bg="gray.800"
       borderWidth={1}
-      borderColor="gray.200"
+      borderColor="gray.700"
       borderRadius="lg"
       textAlign="left"
       transition="all 0.2s"
       _hover={{
+        bg: 'gray.700',
         borderColor: 'purple.400',
         transform: 'translateY(-2px)',
-        shadow: 'md',
+        shadow: 'lg',
       }}
       onClick={onClick}
     >
       <Text fontSize="2xl" mb={2}>
         {icon}
       </Text>
-      <Text fontWeight="600" mb={1}>
+      <Text fontWeight="600" mb={1} color="white">
         {title}
       </Text>
-      <Text fontSize="sm" color="gray.600">
+      <Text fontSize="sm" color="gray.400">
         {description}
       </Text>
     </Box>
