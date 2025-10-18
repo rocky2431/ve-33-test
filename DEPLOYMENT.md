@@ -316,6 +316,107 @@ npm run preview
 
 ---
 
+## ☁️ Vercel 云部署
+
+### Vercel 部署配置
+
+项目已配置 Vercel 自动部署，配置文件位于根目录 `vercel.json`。
+
+**部署配置说明**:
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "npm install --prefix frontend",
+  "framework": "vite"
+}
+```
+
+### TypeScript 编译要求
+
+**重要**: Vercel 部署会严格执行 TypeScript 类型检查，以下问题已修复：
+
+**已修复的问题 (2025-10-18)**:
+1. ✅ **BigInt 渲染错误**: React 无法直接渲染 BigInt 值
+   - 修复位置: `DashboardV2.tsx:434`
+   - 解决方案: 使用 `.toString()` 转换 BigInt 为字符串
+
+2. ✅ **Page 类型冲突**: 多个 Page 类型定义导致冲突
+   - 修复位置: `App.tsx`, `Header.tsx`
+   - 解决方案: 统一使用 `Header.tsx` 中的 Page 类型定义
+
+3. ✅ **属性访问错误**: 访问不存在的 theme 属性
+   - 修复位置: `MyVeNFTs.tsx:325`
+   - 解决方案: 使用正确的 `colors.textPrimary` 替代 `colors.text`
+
+4. ✅ **Hook 返回值错误**: useUserVeNFTs 返回 `nfts` 而非 `tokens`
+   - 修复位置: `useUserPortfolio.ts`, `useUserRewards.ts`
+   - 解决方案: 更正属性名称
+
+5. ✅ **类型推断问题**: TypeScript 无法推断 Address 类型
+   - 修复位置: `useTokenPrice.ts:44`, `useVeNFT.ts:215`
+   - 解决方案: 添加类型断言
+
+6. ✅ **未使用变量**: 严格模式下未使用变量视为错误
+   - 修复位置: 多个文件
+   - 解决方案: 移除或使用下划线前缀标记
+
+### 部署流程
+
+1. **推送代码到 GitHub**:
+   ```bash
+   git add -A
+   git commit -m "fix: 修复 TypeScript 编译错误"
+   git push origin main
+   ```
+
+2. **自动触发部署**:
+   - Vercel 会自动检测 GitHub 推送
+   - 执行 `npm install --prefix frontend`
+   - 执行 `npm run build` (包含 TypeScript 编译)
+   - 部署到 Vercel CDN
+
+3. **查看部署状态**:
+   - 访问 Vercel Dashboard
+   - 查看构建日志
+   - 获取部署 URL
+
+### 常见部署错误
+
+**错误**: `Type 'bigint' is not assignable to type 'ReactNode'`
+- **原因**: React 无法直接渲染 BigInt
+- **解决**: 使用 `.toString()` 转换
+
+**错误**: `error TS6133: '...' is declared but its value is never read`
+- **原因**: 未使用的变量或导入
+- **解决**: 移除未使用的代码或使用 `_` 前缀
+
+**错误**: `Property '...' does not exist on type '{}'`
+- **原因**: TypeScript 类型推断失败
+- **解决**: 添加类型断言 `as Type`
+
+### 部署验证
+
+✅ **本地构建测试**:
+```bash
+cd frontend
+npm run build
+```
+
+✅ **TypeScript 编译检查**:
+```bash
+cd frontend
+npx tsc -b
+```
+
+✅ **预览生产构建**:
+```bash
+cd frontend
+npm run preview
+```
+
+---
+
 ## 🧪 功能测试
 
 ### 1. 连接钱包
