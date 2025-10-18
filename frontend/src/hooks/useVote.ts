@@ -390,8 +390,14 @@ export function useVoteWeights() {
   const { data: hash, writeContract, isPending, error } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
-  // 投票 (简化版本,接受地址数组和权重数组)
-  const vote = async (poolAddresses: Address[], weights: number[]) => {
+  // 投票 (接受 tokenId、地址数组和权重数组)
+  const vote = async (tokenId: bigint, poolAddresses: Address[], weights: number[]) => {
+    console.log('🗳️ [useVoteWeights] Voting with:', {
+      tokenId: tokenId.toString(),
+      poolAddresses,
+      weights,
+    })
+
     // 将百分比权重转换为 bigint
     const weightsBigInt = weights.map((w) => BigInt(w))
 
@@ -399,7 +405,7 @@ export function useVoteWeights() {
       address: contracts.voter,
       abi: VoterABI,
       functionName: 'vote',
-      args: [poolAddresses, weightsBigInt],
+      args: [tokenId, poolAddresses, weightsBigInt],
     })
   }
 

@@ -64,8 +64,16 @@ async function main() {
   const voterAddress = await voter.getAddress();
   console.log("   ✅ Voter:", voterAddress, "\n");
 
-  // 7. 部署 Minter
-  console.log("7️⃣  部署 Minter...");
+  // 7. 部署 RewardsDistributor
+  console.log("7️⃣  部署 RewardsDistributor...");
+  const RewardsDistributor = await ethers.getContractFactory("RewardsDistributor");
+  const rewardsDistributor = await RewardsDistributor.deploy(votingEscrowAddress);
+  await rewardsDistributor.waitForDeployment();
+  const rewardsDistributorAddress = await rewardsDistributor.getAddress();
+  console.log("   ✅ RewardsDistributor:", rewardsDistributorAddress, "\n");
+
+  // 8. 部署 Minter
+  console.log("8️⃣  部署 Minter...");
   const Minter = await ethers.getContractFactory("Minter");
   const minter = await Minter.deploy(tokenAddress, votingEscrowAddress);
   await minter.waitForDeployment();
@@ -87,15 +95,17 @@ async function main() {
   console.log("   - Voter.setMinter()");
   await voter.setMinter(minterAddress);
 
-  // 设置 Minter 的 voter
+  // 设置 Minter 的 voter 和 rewardsDistributor
   console.log("   - Minter.setVoter()");
   await minter.setVoter(voterAddress);
+  console.log("   - Minter.setRewardsDistributor()");
+  await minter.setRewardsDistributor(rewardsDistributorAddress);
 
   // 设置 Token 的 minter
   console.log("   - Token.setMinter()");
   await token.setMinter(minterAddress);
 
-  console.log("   ✅ 系统配置完成\n");
+  console.log("   ✅ 系统配置完成（包括 30/70 排放分配）\n");
 
   // ==================== 部署摘要 ====================
   console.log("=" .repeat(60));
@@ -109,9 +119,10 @@ async function main() {
   console.log("   WETH      :", wethAddress);
 
   console.log("\n📋 治理系统层:");
-  console.log("   VotingEscrow:", votingEscrowAddress);
-  console.log("   Voter       :", voterAddress);
-  console.log("   Minter      :", minterAddress);
+  console.log("   VotingEscrow       :", votingEscrowAddress);
+  console.log("   Voter              :", voterAddress);
+  console.log("   RewardsDistributor :", rewardsDistributorAddress);
+  console.log("   Minter             :", minterAddress);
 
   console.log("\n" + "=" .repeat(60));
   console.log("💡 下一步操作:");
@@ -150,6 +161,7 @@ async function main() {
       governance: {
         VotingEscrow: votingEscrowAddress,
         Voter: voterAddress,
+        RewardsDistributor: rewardsDistributorAddress,
         Minter: minterAddress,
       },
     },

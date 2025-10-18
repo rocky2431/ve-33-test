@@ -1,4 +1,4 @@
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi'
 import type { Address } from 'viem'
 import TokenABI from '../abis/Token.json'
 
@@ -8,14 +8,16 @@ const MAX_UINT256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffff
  * Token 授权 Hook
  */
 export function useTokenApprove(tokenAddress?: Address, spenderAddress?: Address) {
+  const { address: userAddress } = useAccount()
+
   // 查询当前授权额度
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: tokenAddress,
     abi: TokenABI,
     functionName: 'allowance',
-    args: spenderAddress ? [spenderAddress as Address, spenderAddress] : undefined,
+    args: userAddress && spenderAddress ? [userAddress as Address, spenderAddress as Address] : undefined,
     query: {
-      enabled: !!tokenAddress && !!spenderAddress,
+      enabled: !!tokenAddress && !!spenderAddress && !!userAddress,
     },
   })
 

@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-10-17T22:44:35.185Z",
+  "deployer": "0x90465a524Fd4c54470f77a11DeDF7503c951E62F",
+  "testAddress": "0x771Bd7b8Cd910333c3E8A4E2c463E73Bc57Ea207",
+  "srusd": {
+    "address": "0x5f3347B3C43821D2783792395B9A4f44A28308A7",
+    "symbol": "SRUSD",
+    "name": "Star USD",
+    "totalSupply": "100000000000.0"
+  },
+  "pools": [],
+  "router": "0x4D6aa9a7740a4DDD4dCC8EDB3F4f43B205daA652",
+  "factory": "0xbA33Aa1E0f257e7a3b54c2862ac1684c2f3E8C29",
+  "voter": "0xda38EcEA1300ea3c229f5b068eFb3C09e78A995D"
+}

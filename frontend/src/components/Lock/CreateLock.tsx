@@ -19,7 +19,7 @@ export function CreateLock() {
 
   // SOLID 余额
   const { balance, refetch: refetchBalance } = useTokenBalance(
-    TOKENS.SOLID.address,
+    TOKENS.SRT.address,
     userAddress
   )
 
@@ -31,7 +31,7 @@ export function CreateLock() {
     isConfirming: isApprovingConfirm,
     isSuccess: isApproveSuccess,
     refetchAllowance,
-  } = useTokenApprove(TOKENS.SOLID.address, contracts.votingEscrow)
+  } = useTokenApprove(TOKENS.SRT.address, contracts.votingEscrow)
 
   // 创建锁仓
   const {
@@ -62,21 +62,55 @@ export function CreateLock() {
     }
   }, [isCreateSuccess, refetchBalance])
 
+  // 执行授权
+  const handleApprove = async () => {
+    await approve()
+  }
+
+  // 执行创建锁仓
   const handleCreateLock = async () => {
     await createLock(amountBigInt, lockDuration)
   }
 
   const getButtonState = () => {
-    if (!isConnected) return { text: '连接钱包', disabled: true, action: null }
-    if (!amount || amountBigInt === 0n) return { text: '输入金额', disabled: true, action: null }
-    if (balance !== undefined && amountBigInt > balance)
-      return { text: 'SOLID 余额不足', disabled: true, action: null }
-    if (needsApproval) return { text: '授权 SOLID', disabled: false, action: approve }
-    return { text: '创建锁仓', disabled: false, action: handleCreateLock }
+    console.log('🔍 [CreateLock] Button State Debug:', {
+      isConnected,
+      amount,
+      amountBigInt: amountBigInt.toString(),
+      balance: balance?.toString(),
+      needsApproval,
+    })
+
+    if (!isConnected) {
+      console.log('❌ [CreateLock] 未连接钱包')
+      return { text: '连接钱包', disabled: true }
+    }
+    if (!amount || amountBigInt === 0n) {
+      console.log('❌ [CreateLock] 未输入金额')
+      return { text: '输入金额', disabled: true }
+    }
+    if (balance !== undefined && amountBigInt > balance) {
+      console.log('❌ [CreateLock] SRT 余额不足')
+      return { text: 'SRT 余额不足', disabled: true }
+    }
+    if (needsApproval) {
+      console.log('✅ [CreateLock] 需要授权 SRT')
+      return { text: '授权 SRT', disabled: false }
+    }
+    console.log('✅ [CreateLock] 可以创建锁仓')
+    return { text: '创建锁仓', disabled: false }
   }
 
   const buttonState = getButtonState()
   const isLoading = isApproving || isApprovingConfirm || isCreating || isCreatingConfirm
+
+  // 根据状态决定onClick handler
+  const getButtonHandler = () => {
+    if (!isConnected || !amount || amountBigInt === 0n) return undefined
+    if (balance !== undefined && amountBigInt > balance) return undefined
+    if (needsApproval) return handleApprove
+    return handleCreateLock
+  }
 
   // 预设锁仓时长
   const durationPresets = [
@@ -254,7 +288,7 @@ export function CreateLock() {
         fullWidth
         disabled={buttonState.disabled || isLoading}
         loading={isLoading}
-        onClick={buttonState.action || undefined}
+        onClick={getButtonHandler()}
       >
         {buttonState.text}
       </Button>

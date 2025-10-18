@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { Card, Table, Button, Input, type Column } from '../common'
 import { useVoteWeights, useAllGauges, type PoolInfo } from '../../hooks/useVote'
+import { useUserVeNFTs } from '../../hooks/useVeNFT'
 import { formatTokenAmount } from '../../utils/format'
 import { colors, spacing, fontSize } from '../../constants/theme'
 import type { Address } from 'viem'
@@ -12,6 +13,9 @@ export function VoteList() {
   const [selectedPools, setSelectedPools] = useState<Map<Address, number>>(new Map())
 
   const { vote, isPending, isSuccess } = useVoteWeights()
+
+  // 获取用户的 ve-NFT 列表
+  const { nfts, isLoading: isLoadingNFTs } = useUserVeNFTs()
 
   // 从合约查询所有池数据
   const { pools, isLoading, isError } = useAllGauges()
@@ -36,15 +40,77 @@ export function VoteList() {
   }
 
   const totalAllocated = Array.from(selectedPools.values()).reduce((sum, w) => sum + w, 0)
-  const canVote = totalAllocated === 100 && selectedPools.size > 0
+  const canVote = totalAllocated === 100 && selectedPools.size > 0 && nfts.length > 0
 
   const handleVote = async () => {
     if (!userAddress) return
 
+    // 检查是否有 ve-NFT
+    if (!nfts || nfts.length === 0) {
+      console.error('❌ [VoteList] 用户没有 ve-NFT')
+      return
+    }
+
+    // 使用第一个 NFT 进行投票（未来可以让用户选择）
+    const tokenId = nfts[0].tokenId
+    const nftEndTime = Number(nfts[0].end)
+    const currentTime = Math.floor(Date.now() / 1000)
+
+    // 估算NFT创建时间(基于锁定结束时间 - 锁定时长)
+    // 注意: 这是一个估算,实际创建时间需要从合约查询
+    const estimatedCreationTime = currentTime - 300 // 保守估计创建至少5分钟前
+
+    // 检查是否满足最小持有期(1天 = 86400秒)
+    const MIN_HOLDING_PERIOD = 86400
+    const timeSinceCreation = currentTime - estimatedCreationTime
+
+    if (timeSinceCreation < MIN_HOLDING_PERIOD) {
+      const remainingTime = MIN_HOLDING_PERIOD - timeSinceCreation
+      const hours = Math.floor(remainingTime / 3600)
+      const minutes = Math.floor((remainingTime % 3600) / 60)
+
+      alert(
+        `⏳ 投票失败\n\n` +
+        `新创建的 ve-NFT 需要持有至少 1 天才能投票。\n\n` +
+        `预计还需等待: ${hours} 小时 ${minutes} 分钟\n\n` +
+        `这是为了防止 Flash Loan 攻击的安全措施。`
+      )
+      return
+    }
+
     const poolAddresses = Array.from(selectedPools.keys())
     const weights = Array.from(selectedPools.values())
 
-    await vote(poolAddresses, weights)
+    console.log('🗳️ [VoteList] Submitting vote:', {
+      tokenId: tokenId.toString(),
+      poolAddresses,
+      weights,
+      totalAllocated,
+    })
+
+    try {
+      await vote(tokenId, poolAddresses, weights)
+    } catch (error: any) {
+      console.error('❌ [VoteList] Vote failed:', error)
+
+      // 解析错误消息
+      let errorMsg = '投票失败'
+      if (error?.message) {
+        if (error.message.includes('minimum holding period')) {
+          errorMsg = '⏳ 新创建的 ve-NFT 需要持有至少 1 天才能投票'
+        } else if (error.message.includes('already voted this week')) {
+          errorMsg = '⏳ 该 NFT 本周已投票，请等待 1 周后再投'
+        } else if (error.message.includes('creation block')) {
+          errorMsg = '⚠️ 不能在 NFT 创建的同一区块投票，请稍等几秒'
+        } else if (error.message.includes('no voting power')) {
+          errorMsg = '❌ 该 NFT 没有投票权重（可能已过期）'
+        } else {
+          errorMsg = error.message
+        }
+      }
+
+      alert(errorMsg)
+    }
   }
 
   const columns: Column<PoolInfo>[] = [
@@ -114,12 +180,30 @@ export function VoteList() {
     )
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingNFTs) {
     return (
       <Card title="投票">
         <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
           <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>⏳</div>
-          <div>加载池数据中...</div>
+          <div>加载数据中...</div>
+        </div>
+      </Card>
+    )
+  }
+
+  // 检查用户是否有 ve-NFT
+  if (!nfts || nfts.length === 0) {
+    return (
+      <Card title="投票">
+        <div style={{ padding: spacing.xl, textAlign: 'center', color: colors.textSecondary }}>
+          <div style={{ fontSize: fontSize.lg, marginBottom: spacing.md }}>🔒</div>
+          <div style={{ marginBottom: spacing.md }}>您还没有 ve-NFT，无法投票</div>
+          <div style={{ fontSize: fontSize.sm, marginBottom: spacing.lg }}>
+            请先创建 ve-NFT 以获得投票权
+          </div>
+          <Button onClick={() => window.location.hash = '#/lock'}>
+            创建 ve-NFT
+          </Button>
         </div>
       </Card>
     )
@@ -251,7 +335,11 @@ export function VoteList() {
         onClick={handleVote}
         style={{ marginTop: spacing.lg }}
       >
-        {canVote ? '确认投票' : '请分配 100% 投票权重'}
+        {!nfts || nfts.length === 0
+          ? '需要 ve-NFT 才能投票'
+          : canVote
+          ? `确认投票 (使用 ve-NFT #${nfts[0].tokenId.toString()})`
+          : '请分配 100% 投票权重'}
       </Button>
 
       {/* 成功提示 */}
@@ -272,10 +360,93 @@ export function VoteList() {
         </div>
       )}
 
-      {/* 说明 */}
+      {/* 收益来源说明 */}
       <div
         style={{
           marginTop: spacing.lg,
+          padding: spacing.md,
+          backgroundColor: `${colors.success}11`,
+          border: `1px solid ${colors.success}33`,
+          borderRadius: '8px',
+          marginBottom: spacing.md,
+        }}
+      >
+        <div style={{ fontWeight: '600', marginBottom: spacing.sm, color: colors.success, fontSize: fontSize.md }}>
+          💰 投票收益来源
+        </div>
+        <div style={{ fontSize: fontSize.sm, color: colors.textSecondary, lineHeight: 1.8 }}>
+          <div style={{ marginBottom: spacing.sm }}>
+            <strong style={{ color: colors.textPrimary }}>1. 交易手续费分成 (Trading Fees)</strong>
+            <div style={{ paddingLeft: spacing.md, marginTop: '4px', color: colors.textTertiary }}>
+              • 您投票的池子产生的所有交易手续费(0.3%)将分配给投票者
+              <br />
+              • 手续费每周自动分发到Bribe合约,可随时领取
+            </div>
+          </div>
+          <div style={{ marginBottom: spacing.sm }}>
+            <strong style={{ color: colors.textPrimary }}>2. 贿赂奖励 (Bribe Rewards)</strong>
+            <div style={{ paddingLeft: spacing.md, marginTop: '4px', color: colors.textTertiary }}>
+              • 项目方为吸引投票而提供的额外奖励
+              <br />
+              • 可能是项目代币或稳定币,每周结算一次
+            </div>
+          </div>
+          <div>
+            <strong style={{ color: colors.textPrimary }}>3. SRT 排放加成 (Emission Boost)</strong>
+            <div style={{ paddingLeft: spacing.md, marginTop: '4px', color: colors.textTertiary }}>
+              • 投票权重越高的池子获得的 SRT 排放量越多
+              <br />
+              • 提高池子的流动性挖矿收益,间接增加手续费收入
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* APY 计算说明 */}
+      <div
+        style={{
+          padding: spacing.md,
+          backgroundColor: `${colors.primary}11`,
+          border: `1px solid ${colors.primary}33`,
+          borderRadius: '8px',
+          marginBottom: spacing.md,
+        }}
+      >
+        <div style={{ fontWeight: '600', marginBottom: spacing.sm, color: colors.primary, fontSize: fontSize.md }}>
+          📊 APY 计算方式
+        </div>
+        <div style={{ fontSize: fontSize.sm, color: colors.textSecondary, lineHeight: 1.8 }}>
+          <div style={{ marginBottom: spacing.sm }}>
+            <strong style={{ color: colors.textPrimary }}>投票 APY 公式：</strong>
+            <div
+              style={{
+                padding: spacing.sm,
+                backgroundColor: colors.bgSecondary,
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+                marginTop: '4px',
+                color: colors.textPrimary,
+              }}
+            >
+              APY = (周手续费 + 周贿赂奖励) / 投票权重 × 52 周
+            </div>
+          </div>
+          <div style={{ color: colors.textTertiary }}>
+            <strong style={{ color: colors.textPrimary }}>示例：</strong>
+            <br />
+            • 您的投票权重: 1,000 veNFT
+            <br />
+            • 池子周交易手续费: 100 SRT
+            <br />
+            • 周贿赂奖励: 50 SRT
+            <br />• 预期年化收益: (100 + 50) / 1,000 × 52 = 780%
+          </div>
+        </div>
+      </div>
+
+      {/* 说明 */}
+      <div
+        style={{
           padding: spacing.md,
           backgroundColor: colors.bgPrimary,
           borderRadius: '8px',
@@ -286,12 +457,18 @@ export function VoteList() {
         <div style={{ fontWeight: '600', marginBottom: spacing.sm, color: colors.textPrimary }}>
           💡 投票说明
         </div>
-        <ul style={{ margin: 0, paddingLeft: spacing.lg }}>
+        <ul style={{ margin: 0, paddingLeft: spacing.lg, lineHeight: 1.8 }}>
           <li>使用 ve-NFT 投票权重为流动性池分配激励</li>
-          <li>投票决定下个周期各池获得的 SOLID 排放量</li>
+          <li>投票决定下个周期各池获得的 SRT 排放量</li>
           <li>投票池可获得该池的交易手续费分成</li>
           <li>投票池可获得贿赂奖励(Bribe)</li>
-          <li>每个周期只能投票一次,投票后无法修改</li>
+          <li style={{ color: colors.warning, fontWeight: '500' }}>
+            ⏳ 新创建的 ve-NFT 需要持有 <strong>1 天</strong> 后才能首次投票
+          </li>
+          <li style={{ color: colors.warning, fontWeight: '500' }}>
+            ⏳ 每个 ve-NFT 每 <strong>1 周</strong> 只能投票一次
+          </li>
+          <li>投票后无法修改,请谨慎分配权重</li>
         </ul>
       </div>
     </Card>

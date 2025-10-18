@@ -16,14 +16,14 @@ import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../common/LanguageSwitcher'
 import { ThemeToggle } from '../common/ThemeToggle'
 
-export type Page = 'dashboard' | 'swap' | 'liquidity' | 'lock' | 'vote' | 'rewards'
+export type Page = 'dashboard' | 'swap' | 'liquidity' | 'farms' | 'lock' | 'vote' | 'rewards'
 
 interface HeaderProps {
   currentPage: Page
   onPageChange: (page: Page) => void
 }
 
-const pages: Page[] = ['dashboard', 'swap', 'liquidity', 'lock', 'vote', 'rewards']
+const pages: Page[] = ['dashboard', 'swap', 'liquidity', 'farms', 'lock', 'vote', 'rewards']
 
 export function Header({ currentPage, onPageChange }: HeaderProps) {
   const { t } = useTranslation()

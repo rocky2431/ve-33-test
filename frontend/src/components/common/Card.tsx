@@ -9,9 +9,10 @@ import type { ReactNode } from 'react'
 interface CardProps extends BoxProps {
   children: ReactNode
   title?: string
+  extra?: ReactNode
 }
 
-export function Card({ children, title, ...boxProps }: CardProps) {
+export function Card({ children, title, extra, ...boxProps }: CardProps) {
   return (
     <Box
       bg="gray.800"
@@ -27,16 +28,20 @@ export function Card({ children, title, ...boxProps }: CardProps) {
       }}
       {...boxProps}
     >
-      {title && (
-        <Heading
-          as="h2"
-          size="lg"
-          mb={6}
-          bgGradient="linear(to-r, brand.400, brand.600)"
-          bgClip="text"
-        >
-          {title}
-        </Heading>
+      {(title || extra) && (
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={6}>
+          {title && (
+            <Heading
+              as="h2"
+              size="lg"
+              bgGradient="linear(to-r, brand.400, brand.600)"
+              bgClip="text"
+            >
+              {title}
+            </Heading>
+          )}
+          {extra && <Box>{extra}</Box>}
+        </Box>
       )}
       {children}
     </Box>

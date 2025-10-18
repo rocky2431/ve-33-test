@@ -1,0 +1,35 @@
+{
+  "network": "bsc-testnet",
+  "chainId": 97,
+  "deployer": "0x90465a524Fd4c54470f77a11DeDF7503c951E62F",
+  "testAddress": "0x771Bd7b8Cd910333c3E8A4E2c463E73Bc57Ea207",
+  "timestamp": "2025-10-17T20:55:23.167Z",
+  "tokens": {
+    "SRT": {
+      "address": "0x4367741631B171d87f9d8a747636Fa3E3Bd048D8",
+      "totalSupply": "10000000000.0",
+      "poolLiquidity": "1000000.0",
+      "testBalance": "19000000.0"
+    },
+    "WSRT": {
+      "address": "0x9799159b07f21106b6219B998184034C09e042ef",
+      "totalSupply": "10000000000.0",
+      "poolLiquidity": "1000000.0",
+      "testBalance": "0.0"
+    }
+  },
+  "contracts": {
+    "core": {
+      "SRT": "0x4367741631B171d87f9d8a747636Fa3E3Bd048D8",
+      "Factory": "0xbA33Aa1E0f257e7a3b54c2862ac1684c2f3E8C29",
+      "Router": "0x4D6aa9a7740a4DDD4dCC8EDB3F4f43B205daA652",
+      "WSRT": "0x9799159b07f21106b6219B998184034C09e042ef"
+    },
+    "governance": {
+      "VotingEscrow": "0x6d5174E4c1461ea76C03BF84e4bD2b621bfA7Fee",
+      "Voter": "0xda38EcEA1300ea3c229f5b068eFb3C09e78A995D",
+      "RewardsDistributor": "0x194cC32a71dCE337943d1299120A57d7a2FCEB76",
+      "Minter": "0x86b09D8C374FA0e83eDe3D47cAb5c261824Aff71"
+    }
+  }
+}

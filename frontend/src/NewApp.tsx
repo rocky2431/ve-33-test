@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ChakraProvider, Flex, Box } from '@chakra-ui/react'
 import { AnimatePresence } from 'framer-motion'
 import { createWeb3Modal } from '@web3modal/wagmi'
-import { config, projectId } from './config/web3'
+import { config, projectId, metadata, bscTestnet } from './config/web3'
 import { theme } from './theme'
 import { Dashboard } from './components/Dashboard/Dashboard'
 import { SwapCard } from './components/Swap/SwapCard'
 import { LiquidityPage } from './components/Liquidity'
+import { FarmsList } from './components/Farms'
 import { CreateLock } from './components/Lock/CreateLock'
 import { MyVeNFTs } from './components/Lock/MyVeNFTs'
 import { Vote } from './components/Vote'
@@ -18,14 +19,26 @@ import { Header, Footer, PageContainer, type Page } from './components/Layout'
 import { useTranslation } from 'react-i18next'
 import './App.css'
 
+// 全局导航接口
+declare global {
+  interface Window {
+    navigateTo?: (page: Page) => void
+  }
+}
+
 // 创建 QueryClient
 const queryClient = new QueryClient()
 
-// 创建 Web3Modal
+// 创建 Web3Modal 实例
 createWeb3Modal({
   wagmiConfig: config,
   projectId,
-  enableAnalytics: false,
+  defaultChain: bscTestnet,
+  enableAnalytics: true,
+  themeMode: 'dark',
+  themeVariables: {
+    '--w3m-accent': '#0ea5e9',
+  }
 })
 
 function AppContent() {
@@ -36,6 +49,14 @@ function AppContent() {
   const handlePageChange = (page: Page) => {
     setCurrentPage(page)
   }
+
+  // 暴露导航函数到全局，供其他组件使用
+  useEffect(() => {
+    window.navigateTo = handlePageChange
+    return () => {
+      delete window.navigateTo
+    }
+  }, [])  // handlePageChange 是稳定的引用，不需要在依赖数组中
 
   const renderPage = () => {
     switch (currentPage) {
@@ -51,6 +72,13 @@ function AppContent() {
 
       case 'liquidity':
         return <LiquidityPage />
+
+      case 'farms':
+        return (
+          <Box maxW="1200px" mx="auto">
+            <FarmsList />
+          </Box>
+        )
 
       case 'lock':
         const lockTabs: Tab[] = [

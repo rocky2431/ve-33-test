@@ -15,8 +15,8 @@ export function SwapCard() {
   const { address: userAddress, isConnected } = useAccount()
 
   // Token 选择
-  const [tokenIn, setTokenIn] = useState<Token | undefined>(TOKENS.SOLID)
-  const [tokenOut, setTokenOut] = useState<Token | undefined>(TOKENS.WBNB)
+  const [tokenIn, setTokenIn] = useState<Token | undefined>(TOKENS.SRT)
+  const [tokenOut, setTokenOut] = useState<Token | undefined>(TOKENS.WSRT)
 
   // 输入金额
   const [amountIn, setAmountIn] = useState('')
