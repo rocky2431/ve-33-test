@@ -436,7 +436,11 @@ export function DashboardV2() {
                           投票权重: {formatTokenAmount(nft.votingPower, 18, 2)}
                         </Text>
                       </Box>
-                      <Button size="xs" variant="outline">
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        onClick={() => window.navigateTo?.('lock')}
+                      >
                         管理
                       </Button>
                     </Flex>

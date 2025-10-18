@@ -16,6 +16,7 @@ import { Vote } from './components/Vote'
 import { Rewards } from './components/Rewards'
 import { Tabs, type Tab, useToast, ToastContainer, NotificationProvider } from './components/common'
 import { Header, Footer, PageContainer, type Page } from './components/Layout'
+import { useUserVeNFTs } from './hooks/useVeNFT'
 import { useTranslation } from 'react-i18next'
 import './App.css'
 
@@ -45,6 +46,7 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard')
   const { messages, closeToast } = useToast()
   const { t } = useTranslation()
+  const { nfts: veNFTs } = useUserVeNFTs()
 
   const handlePageChange = (page: Page) => {
     setCurrentPage(page)
@@ -93,9 +95,11 @@ function AppContent() {
             content: <MyVeNFTs />,
           },
         ]
+        // 如果用户已有 ve-NFT，默认显示"我的 ve-NFT" tab
+        const defaultLockTab = veNFTs && veNFTs.length > 0 ? 'my' : 'create'
         return (
           <Box maxW="600px" mx="auto">
-            <Tabs tabs={lockTabs} defaultActiveKey="create" />
+            <Tabs tabs={lockTabs} defaultActiveKey={defaultLockTab} />
           </Box>
         )
 
