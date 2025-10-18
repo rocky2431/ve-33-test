@@ -51,7 +51,7 @@ export function DashboardV2() {
   const userPortfolio = useUserPortfolio()
   const userRewards = useUserRewards()
   const { positions } = useUserLiquidityPositions()
-  const { tokens: veNFTs } = useUserVeNFTs()
+  const { nfts: veNFTs } = useUserVeNFTs()
   const { claimAll, isPending: isClaimPending } = useClaimAllRewards()
 
   // 自动刷新机制
