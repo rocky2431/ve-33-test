@@ -1,35 +1,49 @@
-import type { CSSProperties, ReactNode } from 'react'
+/**
+ * Card 组件 - 基于 Chakra UI
+ * 现代化的卡片容器，支持主题和暗色模式
+ */
 
-interface CardProps {
+import { Box, Heading, type BoxProps } from '@chakra-ui/react'
+import type { ReactNode } from 'react'
+
+interface CardProps extends BoxProps {
   children: ReactNode
   title?: string
-  style?: CSSProperties
+  extra?: ReactNode
 }
 
-export function Card({ children, title, style }: CardProps) {
+export function Card({ children, title, extra, ...boxProps }: CardProps) {
   return (
-    <div
-      style={{
-        backgroundColor: '#1a1a1a',
-        padding: '32px',
-        borderRadius: '16px',
-        border: '1px solid #333',
-        ...style,
+    <Box
+      bg="gray.800"
+      p={8}
+      borderRadius="2xl"
+      border="1px solid"
+      borderColor="gray.700"
+      boxShadow="md"
+      transition="all 0.2s"
+      _hover={{
+        borderColor: 'gray.600',
+        boxShadow: 'lg',
       }}
+      {...boxProps}
     >
-      {title && (
-        <h2
-          style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            marginBottom: '24px',
-            color: '#fff',
-          }}
-        >
-          {title}
-        </h2>
+      {(title || extra) && (
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={6}>
+          {title && (
+            <Heading
+              as="h2"
+              size="lg"
+              bgGradient="linear(to-r, brand.400, brand.600)"
+              bgClip="text"
+            >
+              {title}
+            </Heading>
+          )}
+          {extra && <Box>{extra}</Box>}
+        </Box>
       )}
       {children}
-    </div>
+    </Box>
   )
 }

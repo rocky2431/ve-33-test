@@ -10,17 +10,20 @@ import { useSwap, useSwapQuote } from '../../hooks/useSwap'
 import { parseTokenAmount, formatTokenAmount, calculateMinOutput } from '../../utils/format'
 import { TOKENS } from '../../constants/tokens'
 import { contracts } from '../../config/web3'
+import { colors, spacing, fontSize, radius } from '../../constants/theme'
 
 export function SwapCard() {
   const { address: userAddress, isConnected } = useAccount()
 
   // Token 选择
-  const [tokenIn, setTokenIn] = useState<Token | undefined>(TOKENS.SOLID)
-  const [tokenOut, setTokenOut] = useState<Token | undefined>(TOKENS.WBNB)
+  const [tokenIn, setTokenIn] = useState<Token | undefined>(TOKENS.SRT)
+  const [tokenOut, setTokenOut] = useState<Token | undefined>(TOKENS.WSRT)
 
   // 输入金额
   const [amountIn, setAmountIn] = useState('')
-  const [slippage] = useState(0.5) // 0.5% 默认滑点
+  const [slippage, setSlippage] = useState(0.5) // 0.5% 默认滑点
+  const [showSlippageSettings, setShowSlippageSettings] = useState(false)
+  const [customSlippage, setCustomSlippage] = useState('')
 
   // Token 余额
   const { balance: balanceIn, refetch: refetchBalanceIn } = useTokenBalance(
@@ -113,6 +116,24 @@ export function SwapCard() {
     setAmountIn('')
   }
 
+  // 滑点预设选项
+  const slippagePresets = [0.1, 0.5, 1, 3]
+
+  // 设置滑点
+  const handleSetSlippage = (value: number) => {
+    setSlippage(value)
+    setCustomSlippage('')
+  }
+
+  // 自定义滑点
+  const handleCustomSlippage = (value: string) => {
+    setCustomSlippage(value)
+    const numValue = parseFloat(value)
+    if (!isNaN(numValue) && numValue > 0 && numValue <= 50) {
+      setSlippage(numValue)
+    }
+  }
+
   // 判断按钮状态
   const getButtonState = () => {
     if (!isConnected) return { text: '连接钱包', disabled: true }
@@ -190,22 +211,22 @@ export function SwapCard() {
       />
 
       {/* 价格信息 */}
-      {amountOut && tokenIn && tokenOut && amountInBigInt > 0n && (
+      {amountOut && tokenIn && tokenOut && amountInBigInt > 0n ? (
         <div
           style={{
-            marginTop: '16px',
-            padding: '12px',
-            backgroundColor: '#0a0a0a',
-            borderRadius: '8px',
-            fontSize: '14px',
-            color: '#888',
+            marginTop: spacing.md,
+            padding: spacing.sm,
+            backgroundColor: colors.bgPrimary,
+            borderRadius: radius.sm,
+            fontSize: fontSize.sm,
+            color: colors.textSecondary,
           }}
         >
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              marginBottom: '8px',
+              marginBottom: spacing.sm,
             }}
           >
             <span>价格</span>
@@ -223,13 +244,145 @@ export function SwapCard() {
             style={{
               display: 'flex',
               justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
             <span>滑点容忍度</span>
-            <span>{slippage}%</span>
+            <button
+              onClick={() => setShowSlippageSettings(!showSlippageSettings)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: colors.primary,
+                cursor: 'pointer',
+                fontSize: fontSize.sm,
+                padding: spacing.xs,
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing.xs,
+              }}
+            >
+              <span>{slippage}%</span>
+              <span style={{ fontSize: fontSize.xs }}>⚙️</span>
+            </button>
           </div>
+
+          {/* 滑点设置面板 */}
+          {showSlippageSettings && (
+            <div
+              style={{
+                marginTop: spacing.md,
+                padding: spacing.md,
+                backgroundColor: colors.bgSecondary,
+                borderRadius: radius.sm,
+                border: `1px solid ${colors.border}`,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: fontSize.xs,
+                  color: colors.textSecondary,
+                  marginBottom: spacing.sm,
+                }}
+              >
+                滑点容忍度设置
+              </div>
+
+              {/* 预设选项 */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: spacing.xs,
+                  marginBottom: spacing.sm,
+                }}
+              >
+                {slippagePresets.map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => handleSetSlippage(preset)}
+                    style={{
+                      padding: spacing.sm,
+                      borderRadius: radius.sm,
+                      border: `1px solid ${
+                        slippage === preset && !customSlippage
+                          ? colors.primary
+                          : colors.border
+                      }`,
+                      backgroundColor:
+                        slippage === preset && !customSlippage
+                          ? colors.primary + '20'
+                          : colors.bgTertiary,
+                      color:
+                        slippage === preset && !customSlippage
+                          ? colors.primary
+                          : colors.textPrimary,
+                      cursor: 'pointer',
+                      fontSize: fontSize.xs,
+                      fontWeight: slippage === preset && !customSlippage ? '600' : '400',
+                    }}
+                  >
+                    {preset}%
+                  </button>
+                ))}
+              </div>
+
+              {/* 自定义输入 */}
+              <div>
+                <div
+                  style={{
+                    fontSize: fontSize.xs,
+                    color: colors.textSecondary,
+                    marginBottom: spacing.xs,
+                  }}
+                >
+                  自定义滑点 (%)
+                </div>
+                <input
+                  type="number"
+                  value={customSlippage}
+                  onChange={(e) => handleCustomSlippage(e.target.value)}
+                  placeholder="输入自定义滑点"
+                  min="0"
+                  max="50"
+                  step="0.1"
+                  style={{
+                    width: '100%',
+                    padding: spacing.sm,
+                    fontSize: fontSize.sm,
+                    borderRadius: radius.sm,
+                    border: `1px solid ${colors.border}`,
+                    backgroundColor: colors.bgTertiary,
+                    color: colors.textPrimary,
+                  }}
+                />
+                {customSlippage && parseFloat(customSlippage) > 5 && (
+                  <div
+                    style={{
+                      fontSize: fontSize.xs,
+                      color: colors.warning,
+                      marginTop: spacing.xs,
+                    }}
+                  >
+                    ⚠️ 警告：滑点过高可能导致不利交易
+                  </div>
+                )}
+                {customSlippage && (parseFloat(customSlippage) < 0.1 || parseFloat(customSlippage) > 50) && (
+                  <div
+                    style={{
+                      fontSize: fontSize.xs,
+                      color: colors.error,
+                      marginTop: spacing.xs,
+                    }}
+                  >
+                    ❌ 滑点必须在 0.1% - 50% 之间
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      ) : null}
 
       {/* 操作按钮 */}
       <Button

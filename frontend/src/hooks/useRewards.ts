@@ -1,9 +1,25 @@
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount, useReadContracts } from 'wagmi'
 import { type Address } from 'viem'
 import GaugeABI from '../abis/Gauge.json'
 import BribeABI from '../abis/Bribe.json'
 import VoterABI from '../abis/Voter.json'
 import { contracts } from '../config/web3'
+import { useMemo } from 'react'
+import { useAllGauges } from './useVote'
+
+export interface RewardItem {
+  type: 'fee' | 'bribe' | 'emission'
+  poolAddress: Address
+  poolName: string
+  token0Symbol?: string
+  token1Symbol?: string
+  gaugeAddress?: Address
+  bribeAddress?: Address
+  rewardToken: string
+  rewardTokenAddress: Address
+  amount: bigint
+  decimals: number
+}
 
 /**
  * 奖励领取 Hook
@@ -139,15 +155,96 @@ export function useRewardTokens(bribeAddress?: Address) {
 }
 
 /**
- * 查询用户奖励 (高级接口)
+ * 查询用户奖励 (基础版本 - 只查询Gauge手续费奖励)
+ * TODO: 完整版本需要添加Bribe奖励和Emission奖励查询
  */
-export function useUserRewards(_address?: Address) {
-  // TODO: 实现完整的奖励查询逻辑
-  // 需要查询所有 Gauge 和 Bribe 合约的奖励
+export function useUserRewards() {
+  const { address } = useAccount()
+
+  // 获取所有池信息
+  const { pools, isLoading: poolsLoading, isError: poolsError } = useAllGauges()
+
+  // 筛选出有gauge的池
+  const gaugesWithPools = useMemo(() => {
+    if (!pools) return []
+    return pools.filter(pool => pool.gaugeAddress && pool.gaugeAddress !== '0x0000000000000000000000000000000000000000')
+  }, [pools])
+
+  // 批量查询每个Gauge的可领取手续费奖励
+  // 注意：这里简化了逻辑，使用address作为查询参数
+  // 实际应该查询用户的ve-NFT tokenId，然后用tokenId查询
+  const gaugeRewardContracts = useMemo(() => {
+    if (!address || gaugesWithPools.length === 0) return []
+
+    return gaugesWithPools.map(pool => ({
+      address: pool.gaugeAddress,
+      abi: GaugeABI,
+      functionName: 'earned',
+      args: [address], // 简化：使用address，实际应使用tokenId
+    }))
+  }, [gaugesWithPools, address])
+
+  const { data: gaugeRewards } = useReadContracts({
+    contracts: gaugeRewardContracts as any,
+  })
+
+  // 组合奖励数据
+  const rewards = useMemo<RewardItem[]>(() => {
+    if (!gaugeRewards || gaugesWithPools.length === 0) return []
+
+    const result: RewardItem[] = []
+
+    gaugesWithPools.forEach((pool, index) => {
+      const rewardAmount = gaugeRewards[index]?.result as bigint | undefined
+
+      // 只添加有奖励的池
+      if (rewardAmount && rewardAmount > 0n) {
+        result.push({
+          type: 'fee',
+          poolAddress: pool.address,
+          poolName: `${pool.token0Symbol || 'Unknown'}/${pool.token1Symbol || 'Unknown'}`,
+          token0Symbol: pool.token0Symbol,
+          token1Symbol: pool.token1Symbol,
+          gaugeAddress: pool.gaugeAddress,
+          bribeAddress: pool.bribeAddress,
+          rewardToken: pool.token0Symbol || 'Unknown', // 简化：假设奖励是token0
+          rewardTokenAddress: pool.token0,
+          amount: rewardAmount,
+          decimals: 18, // 简化：假设18位小数
+        })
+      }
+    })
+
+    return result
+  }, [gaugeRewards, gaugesWithPools])
+
+  // 计算统计数据
+  const stats = useMemo(() => {
+    const feeRewards = rewards.filter(r => r.type === 'fee')
+    const bribeRewards = rewards.filter(r => r.type === 'bribe')
+    const emissionRewards = rewards.filter(r => r.type === 'emission')
+
+    return {
+      totalRewards: rewards.length,
+      feeCount: feeRewards.length,
+      bribeCount: bribeRewards.length,
+      emissionCount: emissionRewards.length,
+    }
+  }, [rewards])
+
+  // 改进 loading 状态逻辑
+  const isLoading = useMemo(() => {
+    if (poolsLoading) return true
+    if (poolsError) return false  // 出错时不再 loading
+    if (!pools || pools.length === 0) return false  // 没有池子不是 loading
+    return !gaugeRewards  // 有池子但奖励数据未加载
+  }, [poolsLoading, poolsError, pools, gaugeRewards])
 
   return {
-    rewards: [], // 所有待领取奖励
-    totalValue: '0', // 总价值
+    rewards,
+    stats,
+    isLoading,
+    isError: poolsError,
   }
 }
 

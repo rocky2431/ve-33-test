@@ -1,6 +1,17 @@
+/**
+ * Tabs 组件 - 基于 Chakra UI
+ * 现代化的标签页组件，支持禁用状态和全宽布局
+ */
+
+import {
+  Tabs as ChakraTabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+} from '@chakra-ui/react'
 import { useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
-import { colors, spacing, fontSize, transition } from '../../constants/theme'
+import type { ReactNode } from 'react'
 
 export interface Tab {
   key: string
@@ -17,65 +28,59 @@ interface TabsProps {
 }
 
 export function Tabs({ tabs, defaultActiveKey, onChange, fullWidth = false }: TabsProps) {
-  const [activeKey, setActiveKey] = useState(defaultActiveKey || tabs[0]?.key)
+  const defaultIndex = tabs.findIndex((tab) => tab.key === defaultActiveKey)
+  const [activeIndex, setActiveIndex] = useState(defaultIndex >= 0 ? defaultIndex : 0)
 
-  const handleTabClick = (key: string, disabled?: boolean) => {
-    if (disabled) return
-    setActiveKey(key)
-    onChange?.(key)
+  const handleChange = (index: number) => {
+    setActiveIndex(index)
+    onChange?.(tabs[index].key)
   }
-
-  const activeTab = tabs.find((tab) => tab.key === activeKey)
-
-  const tabsContainerStyle: CSSProperties = {
-    display: 'flex',
-    gap: spacing.sm,
-    borderBottom: `1px solid ${colors.border}`,
-    marginBottom: spacing.lg,
-  }
-
-  const tabButtonStyle = (isActive: boolean, disabled?: boolean): CSSProperties => ({
-    padding: `${spacing.md} ${spacing.lg}`,
-    fontSize: fontSize.md,
-    fontWeight: '500',
-    backgroundColor: 'transparent',
-    color: isActive ? colors.primary : colors.textSecondary,
-    border: 'none',
-    borderBottom: `2px solid ${isActive ? colors.primary : 'transparent'}`,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-    transition: transition.normal,
-    flex: fullWidth ? 1 : 'none',
-    whiteSpace: 'nowrap',
-  })
 
   return (
-    <div>
-      {/* Tabs Header */}
-      <div style={tabsContainerStyle}>
+    <ChakraTabs
+      index={activeIndex}
+      onChange={handleChange}
+      variant="soft-rounded"
+      colorScheme="brand"
+      isFitted={fullWidth}
+    >
+      <TabList
+        gap={2}
+        borderBottom="1px solid"
+        borderColor="gray.700"
+        pb={4}
+        mb={6}
+      >
         {tabs.map((tab) => (
-          <button
+          <Tab
             key={tab.key}
-            style={tabButtonStyle(tab.key === activeKey, tab.disabled)}
-            onClick={() => handleTabClick(tab.key, tab.disabled)}
-            onMouseEnter={(e) => {
-              if (!tab.disabled && tab.key !== activeKey) {
-                e.currentTarget.style.color = colors.textPrimary
-              }
+            isDisabled={tab.disabled}
+            color="gray.400"
+            fontWeight="medium"
+            _selected={{
+              color: 'white',
+              bg: 'brand.500',
             }}
-            onMouseLeave={(e) => {
-              if (tab.key !== activeKey) {
-                e.currentTarget.style.color = colors.textSecondary
-              }
+            _hover={{
+              color: tab.disabled ? 'gray.400' : 'gray.200',
+            }}
+            _disabled={{
+              cursor: 'not-allowed',
+              opacity: 0.5,
             }}
           >
             {tab.label}
-          </button>
+          </Tab>
         ))}
-      </div>
+      </TabList>
 
-      {/* Tab Content */}
-      <div>{activeTab?.content}</div>
-    </div>
+      <TabPanels>
+        {tabs.map((tab) => (
+          <TabPanel key={tab.key} p={0}>
+            {tab.content}
+          </TabPanel>
+        ))}
+      </TabPanels>
+    </ChakraTabs>
   )
 }

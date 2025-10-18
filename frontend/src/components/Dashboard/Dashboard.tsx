@@ -11,8 +11,8 @@ export function Dashboard() {
   const { address, isConnected } = useAccount()
 
   // 查询余额
-  const { balance: solidBalance } = useTokenBalance(TOKENS.SOLID.address, address)
-  const { balance: wbnbBalance } = useTokenBalance(TOKENS.WBNB.address, address)
+  const { balance: srtBalance } = useTokenBalance(TOKENS.SRT.address, address)
+  const { balance: wsrtBalance } = useTokenBalance(TOKENS.WSRT.address, address)
 
   // 查询 ve-NFT
   const { balance: veNFTBalance } = useUserVeNFTs()
@@ -27,15 +27,15 @@ export function Dashboard() {
   const statCards = [
     {
       icon: '💰',
-      label: 'SOLID 余额',
-      value: solidBalance ? formatTokenAmount(solidBalance, 18, 4) : '-',
-      unit: 'SOLID',
+      label: 'SRT 余额',
+      value: srtBalance ? formatTokenAmount(srtBalance, 18, 4) : '-',
+      unit: 'SRT',
     },
     {
       icon: '💎',
-      label: 'WBNB 余额',
-      value: wbnbBalance ? formatTokenAmount(wbnbBalance, 18, 4) : '-',
-      unit: 'WBNB',
+      label: 'WSRT 余额',
+      value: wsrtBalance ? formatTokenAmount(wsrtBalance, 18, 4) : '-',
+      unit: 'WSRT',
     },
     {
       icon: '🔒',
@@ -181,7 +181,7 @@ export function Dashboard() {
             ve(3,3) 是一个创新的去中心化交易所，结合了 Curve 的 ve tokenomics 和 Olympus DAO 的 (3,3) 博弈论设计。
           </p>
           <ul style={{ margin: 0, paddingLeft: spacing.lg }}>
-            <li>锁仓 SOLID 获得投票权</li>
+            <li>锁仓 SRT 获得投票权</li>
             <li>投票决定每周激励分配</li>
             <li>获得交易手续费和贿赂奖励</li>
             <li>反稀释机制保护锁仓者权益</li>

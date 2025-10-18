@@ -1,105 +1,105 @@
-import type { CSSProperties } from 'react'
-import { colors, spacing, fontSize, radius } from '../../constants/theme'
-import { useResponsive } from '../../hooks/useResponsive'
+/**
+ * Header 组件 - 顶部导航栏
+ * 现代化的应用头部，集成钱包连接、主题切换、语言切换
+ */
 
-export type Page = 'swap' | 'liquidity' | 'lock' | 'vote' | 'rewards' | 'dashboard'
+import {
+  Box,
+  Flex,
+  HStack,
+  Heading,
+  Button,
+  Container,
+  useColorModeValue,
+} from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '../common/LanguageSwitcher'
+import { ThemeToggle } from '../common/ThemeToggle'
+
+export type Page = 'dashboard' | 'swap' | 'liquidity' | 'farms' | 'lock' | 'vote' | 'rewards'
 
 interface HeaderProps {
-  currentPage?: Page
-  onPageChange?: (page: Page) => void
+  currentPage: Page
+  onPageChange: (page: Page) => void
 }
 
+const pages: Page[] = ['dashboard', 'swap', 'liquidity', 'farms', 'lock', 'vote', 'rewards']
+
 export function Header({ currentPage, onPageChange }: HeaderProps) {
-  const { isMobile } = useResponsive()
+  const { t } = useTranslation()
 
-  const headerStyle: CSSProperties = {
-    backgroundColor: colors.bgSecondary,
-    borderBottom: `1px solid ${colors.border}`,
-    padding: isMobile ? spacing.md : spacing.lg,
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-  }
-
-  const containerStyle: CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.lg,
-  }
-
-  const logoStyle: CSSProperties = {
-    fontSize: isMobile ? fontSize.xl : fontSize['3xl'],
-    fontWeight: '700',
-    margin: 0,
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    cursor: 'pointer',
-  }
-
-  const navStyle: CSSProperties = {
-    display: isMobile ? 'none' : 'flex',
-    gap: spacing.sm,
-  }
-
-  const navItems: { key: Page; label: string }[] = [
-    { key: 'dashboard', label: '仪表盘' },
-    { key: 'swap', label: 'Swap' },
-    { key: 'liquidity', label: '流动性' },
-    { key: 'lock', label: '锁仓' },
-    { key: 'vote', label: '投票' },
-    { key: 'rewards', label: '奖励' },
-  ]
+  // 主题颜色
+  const bgColor = useColorModeValue('white', 'gray.900')
+  const borderColor = useColorModeValue('gray.200', 'gray.700')
+  const activeBg = useColorModeValue('brand.500', 'brand.500')
+  const activeColor = useColorModeValue('white', 'white')
+  const inactiveColor = useColorModeValue('gray.600', 'gray.400')
+  const inactiveBorder = useColorModeValue('gray.300', 'gray.700')
 
   return (
-    <header style={headerStyle}>
-      <div style={containerStyle}>
-        <h1 style={logoStyle} onClick={() => onPageChange?.('dashboard')}>
-          ve(3,3) DEX
-        </h1>
+    <Box
+      as="header"
+      bg={bgColor}
+      borderBottom="1px solid"
+      borderColor={borderColor}
+      position="sticky"
+      top={0}
+      zIndex={1000}
+      backdropFilter="blur(10px)"
+      boxShadow="sm"
+    >
+      <Container maxW="container.xl" py={4}>
+        <Flex justify="space-between" align="center">
+          {/* Logo */}
+          <Heading
+            as="h1"
+            size="lg"
+            bgGradient="linear(to-r, brand.400, brand.600)"
+            bgClip="text"
+            cursor="pointer"
+            onClick={() => onPageChange('dashboard')}
+            transition="all 0.2s"
+            _hover={{
+              transform: 'scale(1.05)',
+            }}
+          >
+            ve(3,3) DEX
+          </Heading>
 
-        {/* 桌面导航 */}
-        <nav style={navStyle}>
-          {navItems.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => onPageChange?.(item.key)}
-              style={{
-                padding: `${spacing.sm} ${spacing.md}`,
-                fontSize: fontSize.md,
-                fontWeight: '500',
-                backgroundColor:
-                  currentPage === item.key ? colors.primary : 'transparent',
-                color: currentPage === item.key ? colors.textPrimary : colors.textSecondary,
-                border: currentPage === item.key ? 'none' : `1px solid ${colors.border}`,
-                borderRadius: radius.md,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                if (currentPage !== item.key) {
-                  e.currentTarget.style.backgroundColor = colors.bgTertiary
-                  e.currentTarget.style.color = colors.textPrimary
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (currentPage !== item.key) {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = colors.textSecondary
-                }
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
+          {/* 导航菜单 */}
+          <HStack spacing={2} display={{ base: 'none', md: 'flex' }}>
+            {pages.map((page) => (
+              <Button
+                key={page}
+                onClick={() => onPageChange(page)}
+                variant={currentPage === page ? 'solid' : 'ghost'}
+                colorScheme={currentPage === page ? 'brand' : 'gray'}
+                size="md"
+                fontWeight="medium"
+                borderRadius="lg"
+                border={currentPage === page ? 'none' : '1px solid'}
+                borderColor={currentPage === page ? 'transparent' : inactiveBorder}
+                bg={currentPage === page ? activeBg : 'transparent'}
+                color={currentPage === page ? activeColor : inactiveColor}
+                _hover={{
+                  bg: currentPage === page ? activeBg : useColorModeValue('gray.100', 'gray.800'),
+                  transform: 'translateY(-2px)',
+                }}
+                transition="all 0.2s"
+              >
+                {t(`nav.${page}`)}
+              </Button>
+            ))}
+          </HStack>
 
-        {/* 钱包连接按钮 */}
-        <w3m-button />
-      </div>
-    </header>
+          {/* 右侧工具栏 */}
+          <HStack spacing={3}>
+            <ThemeToggle />
+            <LanguageSwitcher />
+            <w3m-button />
+          </HStack>
+        </Flex>
+      </Container>
+    </Box>
   )
 }

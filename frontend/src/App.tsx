@@ -1,28 +1,46 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import './App.css'
 import { SwapCard } from './components/Swap/SwapCard'
 import { Vote } from './components/Vote'
 import { Rewards } from './components/Rewards'
+import { LiquidityPage } from './components/Liquidity'
 import { useTokenBalance } from './hooks/useTokenBalance'
 import { TOKENS } from './constants/tokens'
 import { formatTokenAmount } from './utils/format'
 
 type Page = 'swap' | 'liquidity' | 'vote' | 'rewards' | 'info'
 
+// 全局导航接口
+declare global {
+  interface Window {
+    navigateTo?: (page: Page) => void
+  }
+}
+
 function App() {
   const { address, isConnected } = useAccount()
   const [currentPage, setCurrentPage] = useState<Page>('swap')
 
+  // 暴露导航函数到全局
+  useEffect(() => {
+    window.navigateTo = (page: Page) => {
+      setCurrentPage(page)
+    }
+    return () => {
+      delete window.navigateTo
+    }
+  }, [])
+
   // 查询 SOLID 余额
   const { balance: solidBalance } = useTokenBalance(
-    TOKENS.SOLID.address,
+    TOKENS.SRT.address,
     address
   )
 
   // 查询 WBNB 余额
   const { balance: wbnbBalance } = useTokenBalance(
-    TOKENS.WBNB.address,
+    TOKENS.WSRT.address,
     address
   )
 
@@ -139,22 +157,7 @@ function App() {
         <main>
           {currentPage === 'swap' && <SwapCard />}
 
-          {currentPage === 'liquidity' && (
-            <div
-              style={{
-                padding: '40px',
-                textAlign: 'center',
-                backgroundColor: '#1a1a1a',
-                borderRadius: '16px',
-                border: '1px solid #333',
-              }}
-            >
-              <h2 style={{ fontSize: '20px', marginBottom: '12px' }}>
-                流动性功能
-              </h2>
-              <p style={{ color: '#888' }}>即将推出...</p>
-            </div>
-          )}
+          {currentPage === 'liquidity' && <LiquidityPage />}
 
           {currentPage === 'vote' && <Vote />}
 

@@ -9,19 +9,25 @@ if (!projectId) {
 }
 
 // Web3Modal 元数据
-const metadata = {
+export const metadata = {
   name: 've(3,3) DEX',
   description: 'Vote-Escrowed Decentralized Exchange on BSC',
-  url: 'http://localhost:3001',
+  url: 'https://ve33dex.io',
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 }
 
+// 支持的链
+const chains = [bscTestnet] as const
+
 // Wagmi 配置
 export const config = defaultWagmiConfig({
-  chains: [bscTestnet],
+  chains,
   projectId,
   metadata,
 })
+
+// 导出 bscTestnet 供其他地方使用
+export { bscTestnet }
 
 // 合约地址
 export const contracts = {

@@ -33,10 +33,14 @@
 |------|------|------------|
 | **VotingEscrow** | `0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6` | [查看](https://testnet.bscscan.com/address/0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6) |
 | **Voter** | `0x28EE028C9D26c59f2C7E9CBE16B89366933d0792` | [查看](https://testnet.bscscan.com/address/0x28EE028C9D26c59f2C7E9CBE16B89366933d0792) |
+| **RewardsDistributor** | `待重新部署` | ve-NFT 持有者 30% 排放分配 ⭐ |
 | **Minter** | `0x41E31C21151F7e8E509754a197463a8E234E136E` | [查看](https://testnet.bscscan.com/address/0x41E31C21151F7e8E509754a197463a8E234E136E) |
-| **RewardsDistributor** | `待部署` | ve-NFT 持有者奖励分配 |
 
-> **⚠️ 重要更新**: RewardsDistributor 是新增合约,用于向 ve-NFT 持有者分配 30% 的代币排放。需要重新部署。
+> **⚠️ 重要更新 (2025-10-18)**:
+> - **RewardsDistributor** 是 P0 核心修复的关键组件，用于实现 30/70 排放分配机制
+> - 已修复部署脚本，`deploy-full.ts` 现在包含 RewardsDistributor 部署
+> - 需要重新部署所有合约以启用完整的 ve(3,3) 代币经济学
+> - 参考文档：[DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md), [PRE_DEPLOYMENT_CHECKLIST.md](PRE_DEPLOYMENT_CHECKLIST.md)
 
 ---
 
@@ -173,7 +177,10 @@ npm run deploy:bsc
 6️⃣  部署 Voter...
    ✅ Voter: 0x28EE...0792
 
-7️⃣  部署 Minter...
+7️⃣  部署 RewardsDistributor... ⭐ (新增)
+   ✅ RewardsDistributor: 0x... (30% 排放分配)
+
+8️⃣  部署 Minter...
    ✅ Minter: 0x41E3...136E
 
 ====================================================================
@@ -181,7 +188,12 @@ npm run deploy:bsc
 ====================================================================
 
 🔗 设置合约关联...
-   ✅ 系统配置完成
+   - VotingEscrow.setVoter()
+   - Voter.setMinter()
+   - Minter.setVoter()
+   - Minter.setRewardsDistributor() ⭐ (新增)
+   - Token.setMinter()
+   ✅ 系统配置完成（包括 30/70 排放分配）
 
 ====================================================================
 🎉 部署成功!
@@ -206,14 +218,18 @@ npx hardhat verify --network bscTestnet 0x5c34D24c0c1457F2d744505259F9aba5CFAed6
 # Voter
 npx hardhat verify --network bscTestnet 0x28EE028C9D26c59f2C7E9CBE16B89366933d0792 0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6 0x739d450F9780e7f6c33263a51Bd53B83F18CfD53 0x2CfAd237410F5bdC9eEA98C79e8391e1AffEE231
 
+# RewardsDistributor ⭐ (新增合约 - 30% 排放分配)
+npx hardhat verify --network bscTestnet <REWARDS_DISTRIBUTOR_ADDRESS> 0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6
+
 # Minter
 npx hardhat verify --network bscTestnet 0x41E31C21151F7e8E509754a197463a8E234E136E 0x2CfAd237410F5bdC9eEA98C79e8391e1AffEE231 0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6
-
-# RewardsDistributor (新增合约)
-npx hardhat verify --network bscTestnet <REWARDS_DISTRIBUTOR_ADDRESS> 0x5c34D24c0c1457F2d744505259F9aba5CFAed6A6 0x2CfAd237410F5bdC9eEA98C79e8391e1AffEE231
 ```
 
-> **📝 注意**: RewardsDistributor 构造函数参数为 `(votingEscrow, token)`
+> **📝 重要说明**:
+> - **RewardsDistributor** 构造函数参数：`(votingEscrow)`
+> - **Minter** 构造函数参数：`(token, votingEscrow)`
+> - 部署顺序很关键：必须先部署 RewardsDistributor，然后部署 Minter
+> - 完整验证命令请参考 [DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md)
 
 ---
 
@@ -244,9 +260,38 @@ npx hardhat verify --network bscTestnet <REWARDS_DISTRIBUTOR_ADDRESS> 0x5c34D24c
    - 最小贿赂金额设为 100 代币
 
 ### 部署注意事项
-- 需要重新部署所有修改的合约
-- 部署顺序: Token → VotingEscrow → **RewardsDistributor** → Voter → Minter
-- 需要调用 `minter.setRewardsDistributor()` 进行关联
+
+**✅ 已修复 (2025-10-18)**:
+- `scripts/deploy-full.ts` 现在包含完整的 8 个合约部署
+- 部署脚本会自动执行所有初始化配置
+- 30/70 排放分配机制已集成
+
+**部署顺序**:
+1. Token (SOLID)
+2. Factory
+3. WETH
+4. Router
+5. VotingEscrow
+6. Voter
+7. **RewardsDistributor** ⭐ (新增，接收 30% 排放)
+8. Minter（最后部署，配置完整的排放分配）
+
+**自动执行的初始化**:
+- `votingEscrow.setVoter(voter)`
+- `voter.setMinter(minter)`
+- `minter.setVoter(voter)`
+- **`minter.setRewardsDistributor(rewardsDistributor)`** ⭐ (新增)
+- `token.setMinter(minter)`
+
+**一键部署命令**:
+```bash
+npm run deploy:bsc
+```
+
+**参考文档**:
+- 详细部署清单：[DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md)
+- 部署前检查：[PRE_DEPLOYMENT_CHECKLIST.md](PRE_DEPLOYMENT_CHECKLIST.md)
+- 用户使用手册：[USER_MANUAL.md](docs/USER_MANUAL.md)
 
 ---
 

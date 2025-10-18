@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-10-16T20:49:30.668Z",
+  "network": "localhost",
+  "chainId": 31337,
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "verification": {
+    "contractsExist": true,
+    "configCorrect": true,
+    "p0FixesApplied": true,
+    "basicFunctionsPassed": true
+  },
+  "addresses": {
+    "core": {
+      "Token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "Factory": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "Router": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "WETH": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+    },
+    "governance": {
+      "VotingEscrow": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "Voter": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+      "Minter": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+    }
+  },
+  "p0Fixes": [
+    {
+      "name": "Flash Loan防护",
+      "description": "Voter.sol 实现最小持有期（1天）",
+      "file": "contracts/governance/Voter.sol",
+      "verified": true
+    },
+    {
+      "name": "Minter分配机制",
+      "description": "Minter.sol:170 使用transfer而非approve",
+      "file": "contracts/governance/Minter.sol",
+      "verified": true
+    },
+    {
+      "name": "最小流动性锁定",
+      "description": "Pair.sol:143 mint到死亡地址0xdEaD",
+      "file": "contracts/core/Pair.sol",
+      "verified": true
+    },
+    {
+      "name": "Decimal缩放修复",
+      "description": "Pair.sol:261-267 使用10**decimals()",
+      "file": "contracts/core/Pair.sol",
+      "verified": true
+    },
+    {
+      "name": "skim/sync函数",
+      "description": "Pair.sol:320-348 完整实现",
+      "file": "contracts/core/Pair.sol",
+      "verified": true
+    },
+    {
+      "name": "Gauge精度",
+      "description": "使用1e18精度计算",
+      "file": "contracts/governance/Gauge.sol",
+      "verified": true
+    },
+    {
+      "name": "Bribe粉尘防护",
+      "description": "最小存款阈值机制",
+      "file": "contracts/governance/Bribe.sol",
+      "verified": true
+    }
+  ]
+}

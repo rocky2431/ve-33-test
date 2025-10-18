@@ -1,0 +1,31 @@
+{
+  "network": "bscTestnet",
+  "deployer": "0x90465a524Fd4c54470f77a11DeDF7503c951E62F",
+  "testAddress": "0x771Bd7b8Cd910333c3E8A4E2c463E73Bc57Ea207",
+  "totalSupply": "10000000000000000000000000000",
+  "liquidityAmount": "1000000000000000000000000000",
+  "transferAmount": "9000000000000000000000000000",
+  "tokens": [
+    {
+      "name": "Star Energy",
+      "symbol": "STE",
+      "address": "0x8103319987b2ABB1F59F4b9c8aD20F70C9b64E8c"
+    },
+    {
+      "name": "Star Finance",
+      "symbol": "STF",
+      "address": "0xB83da2B78d2C4734585b5167863881Dbf3Ea3cAb"
+    },
+    {
+      "name": "Star Chain X",
+      "symbol": "STCX",
+      "address": "0x4040a8cA682408c8cbD4Bb1bE9358409757b225C"
+    },
+    {
+      "name": "Star Base Finance",
+      "symbol": "SBF",
+      "address": "0x048c72128d414e5FC9B3ab9853bb7457A046e365"
+    }
+  ],
+  "timestamp": "2025-10-17T22:00:09.808Z"
+}

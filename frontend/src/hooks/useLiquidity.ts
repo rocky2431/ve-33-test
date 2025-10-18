@@ -89,6 +89,27 @@ export function useLiquidity() {
  */
 export function usePoolInfo(pairAddress?: Address) {
   const { address } = useAccount()
+
+  // 查询 token0
+  const { data: token0 } = useReadContract({
+    address: pairAddress,
+    abi: PairABI,
+    functionName: 'token0',
+    query: {
+      enabled: !!pairAddress,
+    },
+  })
+
+  // 查询 token1
+  const { data: token1 } = useReadContract({
+    address: pairAddress,
+    abi: PairABI,
+    functionName: 'token1',
+    query: {
+      enabled: !!pairAddress,
+    },
+  })
+
   // 查询储备量
   const { data: reserves } = useReadContract({
     address: pairAddress,
@@ -121,6 +142,8 @@ export function usePoolInfo(pairAddress?: Address) {
   })
 
   return {
+    token0: token0 as Address | undefined,
+    token1: token1 as Address | undefined,
     reserve0: reserves ? (reserves as [bigint, bigint, bigint])[0] : undefined,
     reserve1: reserves ? (reserves as [bigint, bigint, bigint])[1] : undefined,
     totalSupply: totalSupply as bigint | undefined,
@@ -155,5 +178,11 @@ export function usePairAddress(tokenA?: Address, tokenB?: Address, stable?: bool
     },
   })
 
-  return pairAddress as Address | undefined
+  // 过滤掉零地址（表示池子不存在）
+  const zeroAddress = '0x0000000000000000000000000000000000000000' as Address
+  if (!pairAddress || pairAddress === zeroAddress) {
+    return undefined
+  }
+
+  return pairAddress as Address
 }

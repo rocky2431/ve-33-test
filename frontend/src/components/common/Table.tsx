@@ -1,5 +1,21 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { colors, radius, spacing, fontSize, transition } from '../../constants/theme'
+/**
+ * Table 组件 - 基于 Chakra UI
+ * 功能完整的表格组件，支持自定义渲染、加载状态和行交互
+ */
+
+import {
+  Table as ChakraTable,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+  Box,
+  Text,
+} from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
+import type { ReactNode } from 'react'
 
 export interface Column<T = any> {
   key: string
@@ -23,9 +39,11 @@ export function Table<T extends Record<string, any>>({
   data,
   rowKey = 'id',
   loading = false,
-  emptyText = '暂无数据',
+  emptyText,
   onRowClick,
 }: TableProps<T>) {
+  const { t } = useTranslation()
+
   const getRowKey = (record: T, index: number): string => {
     if (typeof rowKey === 'function') {
       return rowKey(record)
@@ -33,120 +51,91 @@ export function Table<T extends Record<string, any>>({
     return record[rowKey] ?? index.toString()
   }
 
-  const tableStyle: CSSProperties = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    backgroundColor: colors.bgSecondary,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-  }
-
-  const theadStyle: CSSProperties = {
-    backgroundColor: colors.bgPrimary,
-  }
-
-  const thStyle: CSSProperties = {
-    padding: spacing.md,
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textAlign: 'left',
-    borderBottom: `1px solid ${colors.border}`,
-  }
-
-  const tdStyle: CSSProperties = {
-    padding: spacing.md,
-    fontSize: fontSize.md,
-    color: colors.textPrimary,
-    borderBottom: `1px solid ${colors.border}`,
-  }
-
-  const rowStyle = (clickable: boolean): CSSProperties => ({
-    cursor: clickable ? 'pointer' : 'default',
-    transition: transition.fast,
-  })
+  const defaultEmptyText = emptyText || t('common.noData')
 
   if (loading) {
     return (
-      <div
-        style={{
-          padding: spacing.xl,
-          textAlign: 'center',
-          color: colors.textSecondary,
-          backgroundColor: colors.bgSecondary,
-          borderRadius: radius.md,
-        }}
+      <Box
+        bg="gray.800"
+        p={8}
+        borderRadius="lg"
+        textAlign="center"
       >
-        加载中...
-      </div>
+        <Text color="gray.400">{t('common.loading')}</Text>
+      </Box>
     )
   }
 
   if (data.length === 0) {
     return (
-      <div
-        style={{
-          padding: spacing.xl,
-          textAlign: 'center',
-          color: colors.textTertiary,
-          backgroundColor: colors.bgSecondary,
-          borderRadius: radius.md,
-        }}
+      <Box
+        bg="gray.800"
+        p={8}
+        borderRadius="lg"
+        textAlign="center"
       >
-        {emptyText}
-      </div>
+        <Text color="gray.500">{defaultEmptyText}</Text>
+      </Box>
     )
   }
 
   return (
-    <table style={tableStyle}>
-      <thead style={theadStyle}>
-        <tr>
-          {columns.map((column) => (
-            <th
-              key={column.key}
-              style={{
-                ...thStyle,
-                textAlign: column.align || 'left',
-                width: column.width,
-              }}
-            >
-              {column.title}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((record, index) => (
-          <tr
-            key={getRowKey(record, index)}
-            style={rowStyle(!!onRowClick)}
-            onClick={() => onRowClick?.(record, index)}
-            onMouseEnter={(e) => {
-              if (onRowClick) {
-                e.currentTarget.style.backgroundColor = colors.bgTertiary
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
-          >
+    <TableContainer
+      bg="gray.800"
+      borderRadius="lg"
+      border="1px solid"
+      borderColor="gray.700"
+    >
+      <ChakraTable variant="simple" colorScheme="gray">
+        <Thead bg="gray.900">
+          <Tr>
             {columns.map((column) => (
-              <td
+              <Th
                 key={column.key}
-                style={{
-                  ...tdStyle,
-                  textAlign: column.align || 'left',
-                }}
+                textAlign={column.align || 'left'}
+                width={column.width}
+                color="gray.400"
+                fontSize="xs"
+                textTransform="uppercase"
+                letterSpacing="wider"
+                borderColor="gray.700"
               >
-                {column.render
-                  ? column.render(record[column.key], record, index)
-                  : record[column.key]}
-              </td>
+                {column.title}
+              </Th>
             ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {data.map((record, index) => (
+            <Tr
+              key={getRowKey(record, index)}
+              cursor={onRowClick ? 'pointer' : 'default'}
+              onClick={() => onRowClick?.(record, index)}
+              _hover={
+                onRowClick
+                  ? {
+                      bg: 'gray.700',
+                    }
+                  : undefined
+              }
+              transition="background-color 0.15s"
+            >
+              {columns.map((column) => (
+                <Td
+                  key={column.key}
+                  textAlign={column.align || 'left'}
+                  color="gray.200"
+                  borderColor="gray.700"
+                >
+                  {column.render
+                    ? column.render(record[column.key], record, index)
+                    : record[column.key]}
+                </Td>
+              ))}
+            </Tr>
+          ))}
+        </Tbody>
+      </ChakraTable>
+    </TableContainer>
   )
 }
