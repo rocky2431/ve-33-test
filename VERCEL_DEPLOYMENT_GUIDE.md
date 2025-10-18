@@ -12,7 +12,7 @@
 ### 2. 获取 WalletConnect Project ID
 1. 访问 https://cloud.reown.com/app
 2. 创建新项目或使用现有项目
-3. 复制 Project ID（格式：`xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`）
+3. 复制 Project ID（格式：`5c95ea8bc77173454cd81cb8f8c3350f`）
 
 ## 🔧 部署步骤
 
@@ -47,7 +47,7 @@ VITE_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
 VITE_BLOCK_EXPLORER=https://testnet.bscscan.com
 
 # WalletConnect Project ID (必须配置)
-VITE_WALLETCONNECT_PROJECT_ID=83ad0ca840c5fe2770ed8ef45c6fc01a
+VITE_WALLETCONNECT_PROJECT_ID=5c95ea8bc77173454cd81cb8f8c3350f
 
 # 核心 AMM 层合约地址
 VITE_CONTRACT_TOKEN=0x4367741631B171d87f9d8a747636Fa3E3Bd048D8
@@ -106,7 +106,7 @@ vercel
 ```bash
 # 通过 CLI 添加环境变量
 vercel env add VITE_WALLETCONNECT_PROJECT_ID
-# 输入值: 83ad0ca840c5fe2770ed8ef45c6fc01a
+# 输入值: 5c95ea8bc77173454cd81cb8f8c3350f
 
 # 重复以上步骤添加其他环境变量
 ```
